@@ -12,6 +12,8 @@ public class Main implements ModInitializer {
 
     public static String MOD_ID = "tg_angma";
 
+    public static String MOD_PREFIX = "[Angma]: ";
+
     @Override
     public void onInitialize() {
         ServerLifecycleEvents.SERVER_STARTED.register(this::serverStarted);
@@ -23,7 +25,7 @@ public class Main implements ModInitializer {
         if (world != null) {
             world.getPersistentStateManager().getOrCreate(Saver::new, Saver::new, MOD_ID);
         }else {
-            throw new RuntimeException("[Angma]: Saver was not created, you will not be able to disable anger. Report this bug on the mod page.");
+            throw new RuntimeException(MOD_PREFIX+"Saver was not created, you will not be able to disable anger. Report this bug on the mod page.");
         }
     }
 }

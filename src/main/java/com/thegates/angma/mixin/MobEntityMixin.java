@@ -22,19 +22,23 @@ public abstract class MobEntityMixin extends LivingEntity{
 
     @Shadow private LivingEntity target;
 
+    @Shadow @Nullable public abstract LivingEntity getTarget();
+
     protected MobEntityMixin(EntityType<? extends LivingEntity> entityType, World world) {
         super(entityType, world);
     }
 
     @Inject(at = @At("HEAD"), method = "setTarget(Lnet/minecraft/entity/LivingEntity;)V", cancellable = true)
     private void setTargetInject(LivingEntity target, CallbackInfo info) {
+        System.out.println("set target");
+        LivingEntity prevTarget = getTarget();
         // Not on client or no target, return.
         if (getEntityWorld().isClient() || target == null) {return;}
 
 
         if (Saver.angerDisabled(target, this)) {
-            setTarget(null);
-            setAttacker(null);
+            setTarget(prevTarget);
+            setAttacker(prevTarget);
             info.cancel();
         }
 
@@ -50,8 +54,7 @@ public abstract class MobEntityMixin extends LivingEntity{
 
 
 
-        setTarget(null);
-        setAttacker(null);
+        this.target = null;
 
         cir.setReturnValue(null);
     }
