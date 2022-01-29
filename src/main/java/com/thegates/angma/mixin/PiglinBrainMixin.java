@@ -16,12 +16,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class PiglinBrainMixin {
     @Inject(method = "becomeAngryWith(Lnet/minecraft/entity/mob/AbstractPiglinEntity;Lnet/minecraft/entity/LivingEntity;)V", at = @At("HEAD"), cancellable = true)
     private static void becomeAngryWithMixin(AbstractPiglinEntity piglin, LivingEntity target, CallbackInfo ci){
-        System.out.println("1");
         //TODO Inject after if statement for performance?
         if (Sensor.testAttackableTargetPredicateIgnoreVisibility(piglin, target)){
-            System.out.println("2");
             if (Saver.angerDisabled(target, piglin)){
-                System.out.println("Disabled anger!");
                 ci.cancel();
             }
         }
