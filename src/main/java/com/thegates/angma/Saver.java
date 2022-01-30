@@ -30,30 +30,30 @@ public class Saver extends PersistentState {
     // Create the information from the loaded nbt.
     private void createFromNbt(@NotNull NbtCompound nbt){
 
-        NbtCompound playerDisabledInput = nbt.getCompound("playerDisabled");
-        NbtCompound typeDisabledInput = nbt.getCompound("typeDisabled");
+        NbtCompound entityDisabledInput = nbt.getCompound("playerDisabled");
+        NbtCompound globalDisabledInput = nbt.getCompound("typeDisabled");
 
-        Map<UUID, Set<Identifier>> playerDisabledOutput = new HashMap<>();
-        Map<Identifier, Set<Identifier>> typeDisabledOutput = new HashMap<>();
+        Map<UUID, Set<Identifier>> entityDisabledOutput = new HashMap<>();
+        Map<Identifier, Set<Identifier>> globalDisabledOutput = new HashMap<>();
 
-        playerDisabledInput.getKeys().forEach(uuid -> {
-            NbtList nbtList = (NbtList) playerDisabledInput.get(uuid);
+        entityDisabledInput.getKeys().forEach(uuid -> {
+            NbtList nbtList = (NbtList) entityDisabledInput.get(uuid);
             if (nbtList == null){return;}
             Set<Identifier> identifiers = new HashSet<>();
             nbtList.forEach(nbtElement -> identifiers.add(Identifier.tryParse(nbtElement.asString())));
-            playerDisabledOutput.put(UUID.fromString(uuid), identifiers);
+            entityDisabledOutput.put(UUID.fromString(uuid), identifiers);
         });
 
-        typeDisabledInput.getKeys().forEach(identifier -> {
-            NbtList nbtList = (NbtList) typeDisabledInput.get(identifier);
+        globalDisabledInput.getKeys().forEach(identifier -> {
+            NbtList nbtList = (NbtList) globalDisabledInput.get(identifier);
             if (nbtList == null){return;}
             Set<Identifier> identifiers = new HashSet<>();
             nbtList.forEach(nbtElement -> identifiers.add(Identifier.tryParse(nbtElement.asString())));
-            typeDisabledOutput.put(Identifier.tryParse(identifier), identifiers);
+            globalDisabledOutput.put(Identifier.tryParse(identifier), identifiers);
         });
 
-        entityDisabled = playerDisabledOutput;
-        globalDisabled = typeDisabledOutput;
+        entityDisabled = entityDisabledOutput;
+        globalDisabled = globalDisabledOutput;
     }
 
     // WriteNbt is called when a PersistentState is marked dirty, and the game saves.
@@ -196,6 +196,7 @@ public class Saver extends PersistentState {
         markDirty();
     }
 
+
     public static boolean angerDisabled(Entity target, Entity targetter){
         return hasAngerDisabled(target, targetter) || isAngerDisabled(EntityType.getId(target.getType()), targetter.getType());
     }
@@ -231,10 +232,10 @@ public class Saver extends PersistentState {
         return globalDisabled.get(targetType).contains(type);
     }
 
-    private static boolean isAngerTagDisabled(Identifier targetType, EntityType<?> targetterType){
-        if (globalDisabled.get(targetType) == null) {return false;}
+    private static boolean isAngerTagDisabled(Identifier targetTag, EntityType<?> targetterType){
+        if (globalDisabled.get(targetTag) == null) {return false;}
         for (Identifier tagId : EntityTypeTags.getTagGroup().getTagsFor(targetterType)){
-            if (globalDisabled.get(targetType).contains(tagId)){
+            if (globalDisabled.get(targetTag).contains(tagId)){
                 return true;
             }
         }

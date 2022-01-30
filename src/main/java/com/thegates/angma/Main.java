@@ -25,7 +25,7 @@ public class Main implements ModInitializer {
         if (world != null) {
             world.getPersistentStateManager().getOrCreate(Saver::new, Saver::new, MOD_ID);
         }else {
-            throw new RuntimeException(MOD_PREFIX+"Saver was not created, you will not be able to disable anger. Report this bug on the mod page.");
+            throw new RuntimeException(MOD_PREFIX+"Could not get the overworld, is it disabled?");
         }
     }
 }

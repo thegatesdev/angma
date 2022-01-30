@@ -3,6 +3,7 @@ package com.thegates.angma.mixin;
 import com.thegates.angma.Saver;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.ai.brain.MemoryModuleType;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
@@ -39,6 +40,7 @@ public abstract class MobEntityMixin extends LivingEntity{
         if (Saver.angerDisabled(target, this)) {
             setTarget(prevTarget);
             setAttacker(prevTarget);
+            getBrain().forget(MemoryModuleType.ATTACK_TARGET);
             info.cancel();
         }
 
