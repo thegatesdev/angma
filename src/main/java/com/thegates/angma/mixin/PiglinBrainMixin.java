@@ -1,6 +1,6 @@
 package com.thegates.angma.mixin;
 
-import com.thegates.angma.Saver;
+import com.thegates.angma.Main;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.ai.brain.MemoryModuleType;
 import net.minecraft.entity.mob.PiglinBrain;
@@ -18,7 +18,7 @@ public abstract class PiglinBrainMixin {
     @Inject(method = "tickActivities", at = @At(value = "RETURN"))
     private static void tickActivitiesInject(PiglinEntity piglin, CallbackInfo ci){
         Optional<LivingEntity> optional = piglin.getBrain().getOptionalMemory(MemoryModuleType.ATTACK_TARGET);
-        if (optional.isPresent() && Saver.angerDisabled(optional.get(), piglin)){
+        if (optional.isPresent() && Main.getSaver().angerDisabled(optional.get(), piglin)){
             piglin.getBrain().forget(MemoryModuleType.ATTACK_TARGET);
             piglin.setAttacking(false);
         }

@@ -14,18 +14,21 @@ public class Main implements ModInitializer {
 
     public static String MOD_PREFIX = "[Angma]: ";
 
+    private static Saver saver;
+
     @Override
     public void onInitialize() {
         ServerLifecycleEvents.SERVER_STARTED.register(this::serverStarted);
-        CommandRegistrationCallback.EVENT.register(AngmaCommand::register);
+        CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> new AngmaCommand().register(dispatcher, dedicated));
     }
 
     private void serverStarted(MinecraftServer server){
         ServerWorld world = server.getWorld(World.OVERWORLD);
-        if (world != null) {
-            world.getPersistentStateManager().getOrCreate(Saver::new, Saver::new, MOD_ID);
-        }else {
-            throw new RuntimeException(MOD_PREFIX+"Could not get the overworld, is it disabled?");
-        }
+        assert world != null;
+        saver = world.getPersistentStateManager().getOrCreate(Saver::new, Saver::new, MOD_ID);
+    }
+
+    public static Saver getSaver(){
+        return saver;
     }
 }

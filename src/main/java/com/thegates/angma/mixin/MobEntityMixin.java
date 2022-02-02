@@ -1,6 +1,6 @@
 package com.thegates.angma.mixin;
 
-import com.thegates.angma.Saver;
+import com.thegates.angma.Main;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.ai.brain.MemoryModuleType;
@@ -31,13 +31,12 @@ public abstract class MobEntityMixin extends LivingEntity{
 
     @Inject(at = @At("HEAD"), method = "setTarget(Lnet/minecraft/entity/LivingEntity;)V", cancellable = true)
     private void setTargetInject(LivingEntity target, CallbackInfo info) {
-        System.out.println("set target");
         LivingEntity prevTarget = getTarget();
         // Not on client or no target, return.
         if (getEntityWorld().isClient() || target == null) {return;}
 
 
-        if (Saver.angerDisabled(target, this)) {
+        if (Main.getSaver().angerDisabled(target, this)) {
             setTarget(prevTarget);
             setAttacker(prevTarget);
             getBrain().forget(MemoryModuleType.ATTACK_TARGET);
@@ -52,7 +51,7 @@ public abstract class MobEntityMixin extends LivingEntity{
         if (getEntityWorld().isClient() || targetEntity == null) {return;}
 
 
-        if (!Saver.angerDisabled(targetEntity, this)) {return;}
+        if (!Main.getSaver().angerDisabled(targetEntity, this)) {return;}
 
 
 

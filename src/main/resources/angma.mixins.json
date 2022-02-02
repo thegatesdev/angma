@@ -6,9 +6,11 @@
   "mixins": [
     "EndermanEntityMixin",
     "EntityMixin",
+    "HoglinBrainMixin",
     "MobEntityMixin",
     "PiglinBrainMixin",
-    "PiglinBruteBrainMixin"
+    "PiglinBruteBrainMixin",
+    "SlimeEntityMixin"
   ],
   "client": [],
   "server": [],

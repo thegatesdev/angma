@@ -1,6 +1,6 @@
 package com.thegates.angma.mixin;
 
-import com.thegates.angma.Saver;
+import com.thegates.angma.Main;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.mob.EndermanEntity;
@@ -23,7 +23,7 @@ public abstract class EndermanEntityMixin extends HostileEntity {
 
     @Inject(method = "isPlayerStaring(Lnet/minecraft/entity/player/PlayerEntity;)Z", at = @At("HEAD"), cancellable = true)
     void isPlayerStaringInject(PlayerEntity player, CallbackInfoReturnable<Boolean> info){
-        if (Saver.angerDisabled(player, this)) {
+        if (Main.getSaver().angerDisabled(player, this)) {
             info.setReturnValue(false);
         }
     }
@@ -32,7 +32,7 @@ public abstract class EndermanEntityMixin extends HostileEntity {
     public void setAttackerInject(DamageSource source, float amount, CallbackInfoReturnable<Boolean> info){
         if (getAttacker() == null) {return;}
 
-        if (Saver.angerDisabled(getAttacker(), this)){
+        if (Main.getSaver().angerDisabled(getAttacker(), this)){
             setAttacker(null);
         }
     }

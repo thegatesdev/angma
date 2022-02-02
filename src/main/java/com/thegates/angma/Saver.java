@@ -16,8 +16,8 @@ import java.util.*;
 public class Saver extends PersistentState {
 
     // Information to be saved into nbt and back.
-    private static Map<UUID, Set<Identifier>> entityDisabled = new HashMap<>();
-    private static Map<Identifier, Set<Identifier>> globalDisabled = new HashMap<>();
+    private Map<UUID, Set<Identifier>> entityDisabled = new HashMap<>();
+    private Map<Identifier, Set<Identifier>> globalDisabled = new HashMap<>();
 
     // Default constructor, used for getting the persistentState.
     public Saver() {}
@@ -87,24 +87,30 @@ public class Saver extends PersistentState {
 
     public Set<Identifier> getDisabledTypes(UUID uuid){
         Set<Identifier> dTypes = new HashSet<>();
+        Set<Identifier> all = entityDisabled.get(uuid);
+        if (all == null){
+            return dTypes;
+        }
         for (Identifier typeOrTag : entityDisabled.get(uuid)){
             if (EntityType.get(typeOrTag.toString()).isPresent()){
                 dTypes.add(typeOrTag);
             }
         }
-        if (dTypes.size() == 0){
-            return null;
-        }
         return dTypes;
     }
 
     public Set<Identifier> getDisabledTags(UUID uuid){
-        Set<Identifier> dTags = new HashSet<>(entityDisabled.get(uuid));
-        dTags.removeAll(getDisabledTypes(uuid));
-        if (dTags.size() == 0){
-            return null;
+        Set<Identifier> all = entityDisabled.get(uuid);
+        if (all == null){
+            return new HashSet<>();
         }
+        Set<Identifier> dTags = new HashSet<>(all);
+        dTags.removeAll(getDisabledTypes(uuid));
         return dTags;
+    }
+
+    public Map<Identifier, Set<Identifier>> getGlobalDisabled(){
+        return new HashMap<>(globalDisabled);   // TODO is this necessary?
     }
 
 
@@ -197,21 +203,21 @@ public class Saver extends PersistentState {
     }
 
 
-    public static boolean angerDisabled(Entity target, Entity targetter){
+    public boolean angerDisabled(Entity target, Entity targetter){
         return hasAngerDisabled(target, targetter) || isAngerDisabled(EntityType.getId(target.getType()), targetter.getType());
     }
 
 
-    private static boolean hasAngerDisabled(Entity target, @NotNull Entity targeter){
+    private boolean hasAngerDisabled(Entity target, @NotNull Entity targeter){
         return hasAngerTypeDisabled(target, EntityType.getId(targeter.getType())) || hasAngerTagDisabled(target, targeter.getType());
     }
 
-    private static boolean hasAngerTypeDisabled(@NotNull Entity target, Identifier identifier){
+    private boolean hasAngerTypeDisabled(@NotNull Entity target, Identifier identifier){
         if (entityDisabled.get(target.getUuid()) == null) {return false;}
         return entityDisabled.get(target.getUuid()).contains(identifier);
     }
 
-    private static boolean hasAngerTagDisabled(Entity target, EntityType<?> type){
+    private boolean hasAngerTagDisabled(Entity target, EntityType<?> type){
         if (entityDisabled.get(target.getUuid()) == null) {return false;}
         Collection<Identifier> tags = EntityTypeTags.getTagGroup().getTagsFor(type);
         for (Identifier tagId : tags){
@@ -223,16 +229,16 @@ public class Saver extends PersistentState {
     }
 
 
-    private static boolean isAngerDisabled(Identifier targetType, EntityType<?> targetterType){
+    private boolean isAngerDisabled(Identifier targetType, EntityType<?> targetterType){
         return isAngerTypeDisabled(targetType, EntityType.getId(targetterType)) || isAngerTagDisabled(targetType, targetterType);
     }
 
-    private static boolean isAngerTypeDisabled(Identifier targetType, Identifier type){
+    private boolean isAngerTypeDisabled(Identifier targetType, Identifier type){
         if (globalDisabled.get(targetType) == null) {return false;}
         return globalDisabled.get(targetType).contains(type);
     }
 
-    private static boolean isAngerTagDisabled(Identifier targetTag, EntityType<?> targetterType){
+    private boolean isAngerTagDisabled(Identifier targetTag, EntityType<?> targetterType){
         if (globalDisabled.get(targetTag) == null) {return false;}
         for (Identifier tagId : EntityTypeTags.getTagGroup().getTagsFor(targetterType)){
             if (globalDisabled.get(targetTag).contains(tagId)){
