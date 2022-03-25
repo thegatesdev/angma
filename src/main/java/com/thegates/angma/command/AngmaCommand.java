@@ -2,10 +2,11 @@ package com.thegates.angma.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.thegates.angma.Main;
 import com.thegates.angma.Saver;
+import net.minecraft.command.CommandSource;
 import net.minecraft.command.argument.EntityArgumentType;
-import net.minecraft.command.argument.EntitySummonArgumentType;
 import net.minecraft.command.argument.IdentifierArgumentType;
 import net.minecraft.command.suggestion.SuggestionProviders;
 import net.minecraft.entity.Entity;
@@ -17,7 +18,10 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.tag.EntityTypeTags;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Util;
+import net.minecraft.util.registry.Registry;
 
 import java.util.Collection;
 import java.util.Map;
@@ -25,6 +29,14 @@ import java.util.Optional;
 import java.util.Set;
 
 public class AngmaCommand {
+
+
+
+    public static final SuggestionProvider<ServerCommandSource> ALL_ENTITIES = SuggestionProviders.register(new Identifier("all_entities"), (commandContext, suggestionsBuilder) -> CommandSource.suggestFromIdentifier(Registry.ENTITY_TYPE.stream(), suggestionsBuilder, EntityType::getId, entityType -> new TranslatableText(Util.createTranslationKey("entity", EntityType.getId(entityType)))));
+    public static final SuggestionProvider<ServerCommandSource> ALL_TAGS = SuggestionProviders.register(new Identifier("all_tags"), (commandContext, suggestionsBuilder) -> CommandSource.suggestFromIdentifier(EntityTypeTags.getTagGroup().getTags().keySet(), suggestionsBuilder, i -> i, identifier -> new TranslatableText(Util.createTranslationKey("entity", identifier))));
+
+
+
 
     public void register(CommandDispatcher<ServerCommandSource> dispatcher, @SuppressWarnings("unused") boolean dedicated){
         LiteralArgumentBuilder<ServerCommandSource> baseCommand = CommandManager.literal("anger").requires(source -> source.hasPermissionLevel(2));
@@ -34,40 +46,40 @@ public class AngmaCommand {
                         .then(CommandManager.argument("targets", EntityArgumentType.entities())
 
                                 .then(CommandManager.literal("type")
-                                        .then(CommandManager.argument("entity type", EntitySummonArgumentType.entitySummon()).suggests(SuggestionProviders.SUMMONABLE_ENTITIES)
-                                                .executes((context) -> addAngerMob(context.getSource(), EntityArgumentType.getEntities(context, "targets"), EntitySummonArgumentType.getEntitySummon(context, "entity type")))))
+                                        .then(CommandManager.argument("entity type", IdentifierArgumentType.identifier()).suggests(ALL_ENTITIES)
+                                                .executes((context) -> addAngerMob(context.getSource(), EntityArgumentType.getEntities(context, "targets"), IdentifierArgumentType.getIdentifier(context, "entity type")))))
 
                                 .then(CommandManager.literal("tag")
-                                        .then(CommandManager.argument("entity tag", IdentifierArgumentType.identifier())
+                                        .then(CommandManager.argument("entity tag", IdentifierArgumentType.identifier()).suggests(ALL_TAGS)
                                                 .executes((context -> addAngerTag(context.getSource(), EntityArgumentType.getEntities(context, "targets"), IdentifierArgumentType.getIdentifier(context, "entity tag"))))))
                                 ));
 
         baseCommand.then(CommandManager.literal("disableGlobal")
 
-                .then(CommandManager.argument("for type", EntityIdArgumentType.entityId()).suggests(EntityIdArgumentType.SUMMONABLE_ENTITIES_AND_PLAYER)
+                .then(CommandManager.argument("for type", IdentifierArgumentType.identifier()).suggests(ALL_ENTITIES)
                         .then(CommandManager.literal("type")
-                                .then(CommandManager.argument("type to disable", EntitySummonArgumentType.entitySummon()).suggests(SuggestionProviders.SUMMONABLE_ENTITIES)
-                                        .executes(context -> addGlobalAngerType(context.getSource(), EntityIdArgumentType.getEntityId(context, "for type"), EntitySummonArgumentType.getEntitySummon(context, "type to disable")))
+                                .then(CommandManager.argument("type to disable", IdentifierArgumentType.identifier()).suggests(ALL_ENTITIES)
+                                        .executes(context -> addGlobalAngerType(context.getSource(), IdentifierArgumentType.getIdentifier(context, "for type"), IdentifierArgumentType.getIdentifier(context, "type to disable")))
                                 ))));
 
         baseCommand.then(CommandManager.literal("enable")
                         .then(CommandManager.argument("targets", EntityArgumentType.entities())
 
                                 .then(CommandManager.literal("type")
-                                        .then(CommandManager.argument("entity type", EntitySummonArgumentType.entitySummon()).suggests(SuggestionProviders.SUMMONABLE_ENTITIES)
-                                                .executes((context) -> removeAngerMob(context.getSource(), EntityArgumentType.getEntities(context, "targets"), EntitySummonArgumentType.getEntitySummon(context, "entity type")))))
+                                        .then(CommandManager.argument("entity type", IdentifierArgumentType.identifier()).suggests(ALL_ENTITIES)
+                                                .executes((context) -> removeAngerMob(context.getSource(), EntityArgumentType.getEntities(context, "targets"), IdentifierArgumentType.getIdentifier(context, "entity type")))))
 
                                 .then(CommandManager.literal("tag")
-                                        .then(CommandManager.argument("entity tag", IdentifierArgumentType.identifier())
+                                        .then(CommandManager.argument("entity tag", IdentifierArgumentType.identifier()).suggests(ALL_TAGS)
                                                 .executes((context -> removeAngerTag(context.getSource(), EntityArgumentType.getEntities(context, "targets"), IdentifierArgumentType.getIdentifier(context, "entity tag"))))))
                                 ));
 
         baseCommand.then(CommandManager.literal("enableGlobal")
 
-                .then(CommandManager.argument("for type", EntityIdArgumentType.entityId()).suggests(EntityIdArgumentType.SUMMONABLE_ENTITIES_AND_PLAYER)
+                .then(CommandManager.argument("for type", IdentifierArgumentType.identifier()).suggests(ALL_ENTITIES)
                         .then(CommandManager.literal("type")
-                                .then(CommandManager.argument("type to enable", EntitySummonArgumentType.entitySummon()).suggests(SuggestionProviders.SUMMONABLE_ENTITIES)
-                                        .executes(context -> removeGlobalAngerType(context.getSource(), EntityIdArgumentType.getEntityId(context, "for type"), EntitySummonArgumentType.getEntitySummon(context, "type to enable")))
+                                .then(CommandManager.argument("type to enable", IdentifierArgumentType.identifier()).suggests(ALL_ENTITIES)
+                                        .executes(context -> removeGlobalAngerType(context.getSource(), IdentifierArgumentType.getIdentifier(context, "for type"), IdentifierArgumentType.getIdentifier(context, "type to enable")))
                                 ))));
 
         baseCommand.then(CommandManager.literal("list").executes((context) -> listAngerFor(context.getSource())));

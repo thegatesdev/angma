@@ -18,8 +18,6 @@ public abstract class PufferFishEntityMixin extends FishEntity {
 
     @Inject(method = "tick", at = @At("HEAD"))
     public void tickMixin(CallbackInfo ci){
-
-
-
+        
     }
 }

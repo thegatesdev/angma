@@ -219,13 +219,7 @@ public class Saver extends PersistentState {
 
     private boolean hasAngerTagDisabled(Entity target, EntityType<?> type){
         if (entityDisabled.get(target.getUuid()) == null) {return false;}
-        Collection<Identifier> tags = EntityTypeTags.getTagGroup().getTagsFor(type);
-        for (Identifier tagId : tags){
-            if (entityDisabled.get(target.getUuid()).contains(tagId)){
-                return true;
-            }
-        }
-        return false;
+        return EntityTypeTags.getTagGroup().getTagsFor(type).stream().anyMatch(new HashSet<>(entityDisabled.get(target.getUuid()))::contains);
     }
 
 
@@ -239,13 +233,7 @@ public class Saver extends PersistentState {
     }
 
     private boolean isAngerTagDisabled(Identifier targetTag, EntityType<?> targetterType){
-        if (globalDisabled.get(targetTag) == null) {return false;}
-        for (Identifier tagId : EntityTypeTags.getTagGroup().getTagsFor(targetterType)){
-            if (globalDisabled.get(targetTag).contains(tagId)){
-                return true;
-            }
-        }
-        return false;
+        if (!globalDisabled.containsKey(targetTag)) {return false;}
+        return EntityTypeTags.getTagGroup().getTagsFor(targetterType).stream().anyMatch(new HashSet<>(globalDisabled.get(targetTag))::contains);
     }
-
 }
