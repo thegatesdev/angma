@@ -3,8 +3,8 @@ package com.thegates.angma.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
+import com.thegates.angma.AngerRegister;
 import com.thegates.angma.Main;
-import com.thegates.angma.Saver;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.command.argument.IdentifierArgumentType;
@@ -30,13 +30,8 @@ import java.util.Set;
 
 public class AngmaCommand {
 
-
-
     public static final SuggestionProvider<ServerCommandSource> ALL_ENTITIES = SuggestionProviders.register(new Identifier("all_entities"), (commandContext, suggestionsBuilder) -> CommandSource.suggestFromIdentifier(Registry.ENTITY_TYPE.stream(), suggestionsBuilder, EntityType::getId, entityType -> new TranslatableText(Util.createTranslationKey("entity", EntityType.getId(entityType)))));
-    public static final SuggestionProvider<ServerCommandSource> ALL_TAGS = SuggestionProviders.register(new Identifier("all_tags"), (commandContext, suggestionsBuilder) -> CommandSource.suggestFromIdentifier(EntityTypeTags.getTagGroup().getTags().keySet(), suggestionsBuilder, i -> i, identifier -> new TranslatableText(Util.createTranslationKey("entity", identifier))));
-
-
-
+    public static final SuggestionProvider<ServerCommandSource> ALL_TAGS = SuggestionProviders.register(new Identifier("all_tags"), (commandContext, suggestionsBuilder) -> CommandSource.suggestFromIdentifier(EntityTypeTags.getTagGroup().getTags().keySet(), suggestionsBuilder, i -> i, identifier -> new TranslatableText(Util.createTranslationKey("entity_tag", identifier))));
 
     public void register(CommandDispatcher<ServerCommandSource> dispatcher, @SuppressWarnings("unused") boolean dedicated){
         LiteralArgumentBuilder<ServerCommandSource> baseCommand = CommandManager.literal("anger").requires(source -> source.hasPermissionLevel(2));
@@ -118,7 +113,7 @@ public class AngmaCommand {
             return 0;
         }
 
-        Saver saver = Main.getSaver();
+        AngerRegister saver = Main.getSaver();
 
         int success = 0;
 
@@ -139,7 +134,7 @@ public class AngmaCommand {
 
     private int removeAngerMob(ServerCommandSource source, Collection<? extends Entity> targets, Identifier identifier){
 
-        Saver saver = Main.getSaver();
+        AngerRegister saver = Main.getSaver();
         for (Entity target : targets) {
             saver.removeMobType(target.getUuid(), identifier);
         }
@@ -150,7 +145,7 @@ public class AngmaCommand {
     }
 
     private int addAngerTag(ServerCommandSource source, Collection<? extends Entity> targets, Identifier identifier){
-        Saver saver = Main.getSaver();
+        AngerRegister saver = Main.getSaver();
         targets.forEach(target -> saver.addTag(target.getUuid(), EntityTypeTags.getTagGroup().getTag(identifier)));
 
         source.sendFeedback(Text.of("Added tag #"+identifier+" to selected entities!"), false);
@@ -158,7 +153,7 @@ public class AngmaCommand {
     }
 
     private int removeAngerTag(ServerCommandSource source, Collection<? extends Entity> targets, Identifier identifier){
-        Saver saver = Main.getSaver();
+        AngerRegister saver = Main.getSaver();
 
         targets.forEach(entity -> saver.removeTag(entity.getUuid(), EntityTypeTags.getTagGroup().getTag(identifier)));
 
@@ -172,9 +167,9 @@ public class AngmaCommand {
             source.sendError(Text.of(Main.MOD_PREFIX + "Console cannot list mobs!"));
             return 0;
         }
-        Saver saver = source.getWorld().getPersistentStateManager().getOrCreate(Saver::new, Saver::new, Main.MOD_ID);
+        AngerRegister angerRegister = source.getWorld().getPersistentStateManager().getOrCreate(AngerRegister::new, AngerRegister::new, Main.MOD_ID);
 
-        Set<Identifier> disabledTypes = saver.getDisabledTypes(source.getEntity().getUuid());
+        Set<Identifier> disabledTypes = angerRegister.getDisabledTypes(source.getEntity().getUuid());
         if (disabledTypes == null || disabledTypes.isEmpty()){
             source.sendFeedback(Text.of("No types disabled."), false);
         }else{
@@ -182,7 +177,7 @@ public class AngmaCommand {
             disabledTypes.forEach(type -> source.sendFeedback(Text.of("-"+type.getPath()), false));
         }
 
-        Set<Identifier> disabledTags = saver.getDisabledTags(source.getEntity().getUuid());
+        Set<Identifier> disabledTags = angerRegister.getDisabledTags(source.getEntity().getUuid());
         if (disabledTags == null || disabledTags.isEmpty()){
             source.sendFeedback(Text.of("No tags disabled."), false);
             return 0;

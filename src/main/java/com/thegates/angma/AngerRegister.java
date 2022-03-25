@@ -13,17 +13,17 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-public class Saver extends PersistentState {
+public class AngerRegister extends PersistentState {
 
     // Information to be saved into nbt and back.
     private Map<UUID, Set<Identifier>> entityDisabled = new HashMap<>();
     private Map<Identifier, Set<Identifier>> globalDisabled = new HashMap<>();
 
     // Default constructor, used for getting the persistentState.
-    public Saver() {}
+    public AngerRegister() {}
 
     // Constructor to immediately create the data from nbt.
-    public Saver(@NotNull NbtCompound nbt){
+    public AngerRegister(@NotNull NbtCompound nbt){
         createFromNbt(nbt);
     }
 
