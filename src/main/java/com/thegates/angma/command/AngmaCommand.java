@@ -33,183 +33,223 @@ public class AngmaCommand {
     public static final SuggestionProvider<ServerCommandSource> ALL_ENTITIES = SuggestionProviders.register(new Identifier("all_entities"), (commandContext, suggestionsBuilder) -> CommandSource.suggestFromIdentifier(Registry.ENTITY_TYPE.stream(), suggestionsBuilder, EntityType::getId, entityType -> new TranslatableText(Util.createTranslationKey("entity", EntityType.getId(entityType)))));
     public static final SuggestionProvider<ServerCommandSource> ALL_TAGS = SuggestionProviders.register(new Identifier("all_tags"), (commandContext, suggestionsBuilder) -> CommandSource.suggestFromIdentifier(EntityTypeTags.getTagGroup().getTags().keySet(), suggestionsBuilder, i -> i, identifier -> new TranslatableText(Util.createTranslationKey("entity_tag", identifier))));
 
-    public void register(CommandDispatcher<ServerCommandSource> dispatcher, @SuppressWarnings("unused") boolean dedicated){
+
+    public void register(CommandDispatcher<ServerCommandSource> dispatcher, @SuppressWarnings("unused") boolean dedicated) {
         LiteralArgumentBuilder<ServerCommandSource> baseCommand = CommandManager.literal("anger").requires(source -> source.hasPermissionLevel(2));
 
-
         baseCommand.then(CommandManager.literal("disable")
-                        .then(CommandManager.argument("targets", EntityArgumentType.entities())
-
-                                .then(CommandManager.literal("type")
-                                        .then(CommandManager.argument("entity type", IdentifierArgumentType.identifier()).suggests(ALL_ENTITIES)
-                                                .executes((context) -> addAngerMob(context.getSource(), EntityArgumentType.getEntities(context, "targets"), IdentifierArgumentType.getIdentifier(context, "entity type")))))
-
-                                .then(CommandManager.literal("tag")
-                                        .then(CommandManager.argument("entity tag", IdentifierArgumentType.identifier()).suggests(ALL_TAGS)
-                                                .executes((context -> addAngerTag(context.getSource(), EntityArgumentType.getEntities(context, "targets"), IdentifierArgumentType.getIdentifier(context, "entity tag"))))))
-                                ));
-
-        baseCommand.then(CommandManager.literal("disableGlobal")
-
-                .then(CommandManager.argument("for type", IdentifierArgumentType.identifier()).suggests(ALL_ENTITIES)
+                .then(CommandManager.literal("entity")
                         .then(CommandManager.literal("type")
-                                .then(CommandManager.argument("type to disable", IdentifierArgumentType.identifier()).suggests(ALL_ENTITIES)
-                                        .executes(context -> addGlobalAngerType(context.getSource(), IdentifierArgumentType.getIdentifier(context, "for type"), IdentifierArgumentType.getIdentifier(context, "type to disable")))
-                                ))));
+                                .then(CommandManager.argument("for entities", EntityArgumentType.entities())
+                                        .then(CommandManager.argument("from type", IdentifierArgumentType.identifier()).suggests(ALL_ENTITIES)
+                                                .executes(context -> addAngerType(context.getSource(), EntityArgumentType.getEntities(context, "for entities"), IdentifierArgumentType.getIdentifier(context, "from type")))
+                                        ))
+                        )
+
+                        .then(CommandManager.literal("tag")
+                                .then(CommandManager.argument("for entities", EntityArgumentType.entities())
+                                        .then(CommandManager.argument("from tag", IdentifierArgumentType.identifier()).suggests(ALL_TAGS)
+                                                .executes(context -> addAngerTag(context.getSource(), EntityArgumentType.getEntities(context, "for entities"), IdentifierArgumentType.getIdentifier(context, "from tag")))
+                                        ))
+                        )
+                )
+                .then(CommandManager.literal("global")
+                        .then(CommandManager.argument("for type", IdentifierArgumentType.identifier())
+                                .then(CommandManager.argument("from type", IdentifierArgumentType.identifier())
+                                        .executes(context -> addGlobalAngerType(context.getSource(), IdentifierArgumentType.getIdentifier(context, "for type"), IdentifierArgumentType.getIdentifier(context, "from type")))
+                                ))
+                )
+                .then(CommandManager.literal("specific")
+                        .then(CommandManager.argument("for entity", EntityArgumentType.entity())
+                                .then(CommandManager.argument("from entity", EntityArgumentType.entity())
+                                        .executes(context -> {
+                                            Main.getSaver().addSpecific(EntityArgumentType.getEntity(context, "for entity").getUuid(), EntityArgumentType.getEntity(context, "from entity").getUuid());
+                                            context.getSource().sendFeedback(Text.of("Added specific entity to list."), false);
+                                            return 1;
+                                        })
+                                ))
+                )
+        );
 
         baseCommand.then(CommandManager.literal("enable")
-                        .then(CommandManager.argument("targets", EntityArgumentType.entities())
+                .then(CommandManager.literal("entity")
 
-                                .then(CommandManager.literal("type")
-                                        .then(CommandManager.argument("entity type", IdentifierArgumentType.identifier()).suggests(ALL_ENTITIES)
-                                                .executes((context) -> removeAngerMob(context.getSource(), EntityArgumentType.getEntities(context, "targets"), IdentifierArgumentType.getIdentifier(context, "entity type")))))
-
-                                .then(CommandManager.literal("tag")
-                                        .then(CommandManager.argument("entity tag", IdentifierArgumentType.identifier()).suggests(ALL_TAGS)
-                                                .executes((context -> removeAngerTag(context.getSource(), EntityArgumentType.getEntities(context, "targets"), IdentifierArgumentType.getIdentifier(context, "entity tag"))))))
-                                ));
-
-        baseCommand.then(CommandManager.literal("enableGlobal")
-
-                .then(CommandManager.argument("for type", IdentifierArgumentType.identifier()).suggests(ALL_ENTITIES)
                         .then(CommandManager.literal("type")
-                                .then(CommandManager.argument("type to enable", IdentifierArgumentType.identifier()).suggests(ALL_ENTITIES)
-                                        .executes(context -> removeGlobalAngerType(context.getSource(), IdentifierArgumentType.getIdentifier(context, "for type"), IdentifierArgumentType.getIdentifier(context, "type to enable")))
-                                ))));
+                                .then(CommandManager.argument("for entities", EntityArgumentType.entities())
+                                        .then(CommandManager.argument("from type", IdentifierArgumentType.identifier()).suggests(ALL_ENTITIES)
+                                                .executes(context -> removeAngerType(context.getSource(), EntityArgumentType.getEntities(context, "for entities"), IdentifierArgumentType.getIdentifier(context, "from type")))
+                                        ))
+                        )
+
+                        .then(CommandManager.literal("tag")
+                                .then(CommandManager.argument("for entities", EntityArgumentType.entities())
+                                        .then(CommandManager.argument("from tag", IdentifierArgumentType.identifier()).suggests(ALL_TAGS)
+                                                .executes(context -> removeAngerTag(context.getSource(), EntityArgumentType.getEntities(context, "for entities"), IdentifierArgumentType.getIdentifier(context, "from tag")))
+                                        ))
+                        )
+                )
+                .then(CommandManager.literal("specific")
+
+                        .then(CommandManager.argument("for entity", EntityArgumentType.entity())
+                                .then(CommandManager.argument("from entity", EntityArgumentType.entity())
+                                        .executes(context -> {
+                                            Main.getSaver().removeSpecific(EntityArgumentType.getEntity(context, "for entity").getUuid(), EntityArgumentType.getEntity(context, "from entity").getUuid());
+                                            context.getSource().sendFeedback(Text.of("Added specific entity to list."), false);
+                                            return 1;
+                                        })
+                                ))
+                )
+                .then(CommandManager.literal("global")
+
+                        .then(CommandManager.argument("for type", IdentifierArgumentType.identifier()).suggests(ALL_ENTITIES)
+                                .then(CommandManager.argument("from type", IdentifierArgumentType.identifier()).suggests(ALL_ENTITIES)
+                                        .executes(context -> removeGlobalAngerType(context.getSource(), IdentifierArgumentType.getIdentifier(context, "for type"), IdentifierArgumentType.getIdentifier(context, "from type")))
+                                ))
+                )
+        );
 
         baseCommand.then(CommandManager.literal("list").executes((context) -> listAngerFor(context.getSource())));
 
         baseCommand.then(CommandManager.literal("listGlobal").executes(context -> listGlobalAngerTo(context.getSource())));
 
         baseCommand.then(CommandManager.literal("target")
-                        .then(CommandManager.argument("entities", EntityArgumentType.entities())
-                                .then(CommandManager.argument("target", EntityArgumentType.entity())
-                                        .executes((context -> setAngry(EntityArgumentType.getEntities(context, "entities"), EntityArgumentType.getEntity(context, "target")))))));
+                .then(CommandManager.argument("entities", EntityArgumentType.entities())
+                        .then(CommandManager.argument("target", EntityArgumentType.entity())
+                                .executes((context -> setAngry(EntityArgumentType.getEntities(context, "entities"), EntityArgumentType.getEntity(context, "target")))))));
 
         dispatcher.register(baseCommand);
     }
 
 
-    private int addGlobalAngerType(ServerCommandSource source, Identifier type, Identifier typeToDisable){
+    private int addGlobalAngerType(ServerCommandSource source, Identifier type, Identifier typeToDisable) {
 
         Main.getSaver().addGlobalMobType(type, typeToDisable);
 
-        source.sendFeedback(Text.of("Added "+type.getPath()+"!"), false);
+        source.sendFeedback(Text.of("Added " + type.getPath() + "!"), false);
 
         return 1;
     }
 
-    private int removeGlobalAngerType(ServerCommandSource source, Identifier type, Identifier typeToEnable){
+
+    private int removeGlobalAngerType(ServerCommandSource source, Identifier type, Identifier typeToEnable) {
         Main.getSaver().removeGlobalMobType(type, typeToEnable);
 
-        source.sendFeedback(Text.of("Removed "+type.getPath()+"!"), false);
+        source.sendFeedback(Text.of("Removed " + type.getPath() + "!"), false);
 
         return 1;
     }
 
-    private int addAngerMob(ServerCommandSource source, Collection<? extends Entity> targets, Identifier identifier){
-        Optional<EntityType<?>> type = EntityType.get(identifier.toString());
-        if (type.isEmpty()){
+
+    private int addAngerType(ServerCommandSource source, Collection<? extends Entity> targets, Identifier typeId) {
+        Optional<EntityType<?>> type = EntityType.get(typeId.toString());
+        if (type.isEmpty()) {
             return 0;
-        }
+        }// TODO
 
         AngerRegister saver = Main.getSaver();
 
         int success = 0;
 
         for (Entity target : targets) {
-            if (saver.addMobType(target.getUuid(), EntityType.getId(type.get()))){
+            if (saver.addMobType(target.getUuid(), EntityType.getId(type.get()))) {
                 success++;
             }
         }
 
         if (success < targets.size()) {
-            source.sendError(new LiteralText(targets.size() - success + " out of "+ targets.size() + " failed!"));
-        }else{
-            source.sendFeedback(Text.of("Added "+identifier.getPath()+" for selected entities!"), false);
+            source.sendError(new LiteralText(targets.size() - success + " out of " + targets.size() + " failed!"));
+        } else {
+            source.sendFeedback(Text.of("Added " + typeId.getPath() + " for selected entities!"), false);
         }
 
         return 1;
     }
 
-    private int removeAngerMob(ServerCommandSource source, Collection<? extends Entity> targets, Identifier identifier){
+
+    private int removeAngerType(ServerCommandSource source, Collection<? extends Entity> targets, Identifier typeId) {
 
         AngerRegister saver = Main.getSaver();
         for (Entity target : targets) {
-            saver.removeMobType(target.getUuid(), identifier);
+            saver.removeMobType(target.getUuid(), typeId);
         }
 
-        source.sendFeedback(Text.of("Removed "+identifier.getPath()+" from all entities!"), false);
+        source.sendFeedback(Text.of("Removed " + typeId.getPath() + " from all entities!"), false);
 
         return 1;
     }
 
-    private int addAngerTag(ServerCommandSource source, Collection<? extends Entity> targets, Identifier identifier){
+
+    private int addAngerTag(ServerCommandSource source, Collection<? extends Entity> targets, Identifier identifier) {
         AngerRegister saver = Main.getSaver();
         targets.forEach(target -> saver.addTag(target.getUuid(), EntityTypeTags.getTagGroup().getTag(identifier)));
 
-        source.sendFeedback(Text.of("Added tag #"+identifier+" to selected entities!"), false);
+        source.sendFeedback(Text.of("Added tag #" + identifier + " to selected entities!"), false);
         return 1;
     }
 
-    private int removeAngerTag(ServerCommandSource source, Collection<? extends Entity> targets, Identifier identifier){
+
+    private int removeAngerTag(ServerCommandSource source, Collection<? extends Entity> targets, Identifier identifier) {
         AngerRegister saver = Main.getSaver();
 
         targets.forEach(entity -> saver.removeTag(entity.getUuid(), EntityTypeTags.getTagGroup().getTag(identifier)));
 
-        source.sendFeedback(Text.of("Removed tag #"+identifier+" From selected entities!"), false);
+        source.sendFeedback(Text.of("Removed tag #" + identifier + " From selected entities!"), false);
 
         return 1;
     }
 
-    private int listAngerFor(ServerCommandSource source){
-        if (source.getEntity() == null){
+
+    private int listAngerFor(ServerCommandSource source) {
+        if (source.getEntity() == null) {
             source.sendError(Text.of(Main.MOD_PREFIX + "Console cannot list mobs!"));
             return 0;
         }
         AngerRegister angerRegister = source.getWorld().getPersistentStateManager().getOrCreate(AngerRegister::new, AngerRegister::new, Main.MOD_ID);
 
         Set<Identifier> disabledTypes = angerRegister.getDisabledTypes(source.getEntity().getUuid());
-        if (disabledTypes == null || disabledTypes.isEmpty()){
+        if (disabledTypes == null || disabledTypes.isEmpty()) {
             source.sendFeedback(Text.of("No types disabled."), false);
-        }else{
+        } else {
             source.sendFeedback(Text.of("Disabled Types:"), false);
-            disabledTypes.forEach(type -> source.sendFeedback(Text.of("-"+type.getPath()), false));
+            disabledTypes.forEach(type -> source.sendFeedback(Text.of("-" + type.getPath()), false));
         }
 
         Set<Identifier> disabledTags = angerRegister.getDisabledTags(source.getEntity().getUuid());
-        if (disabledTags == null || disabledTags.isEmpty()){
+        if (disabledTags == null || disabledTags.isEmpty()) {
             source.sendFeedback(Text.of("No tags disabled."), false);
             return 0;
-        }else {
+        } else {
             source.sendFeedback(Text.of("Disabled Tags:"), false);
-            disabledTags.forEach(tag -> source.sendFeedback(Text.of("-"+tag.getPath()), false));
+            disabledTags.forEach(tag -> source.sendFeedback(Text.of("-" + tag.getPath()), false));
         }
         return 1;
     }
 
-    private int listGlobalAngerTo(ServerCommandSource source){
+
+    private int listGlobalAngerTo(ServerCommandSource source) {
         Map<Identifier, Set<Identifier>> map = Main.getSaver().getGlobalDisabled();
-        if (map == null || map.isEmpty()){
+        if (map == null || map.isEmpty()) {
             source.sendFeedback(Text.of("No global anger disabled!"), false);
             return 1;
         }
 
-        source.sendFeedback(Text.of("Global anger:"),false);
+        source.sendFeedback(Text.of("Global anger:"), false);
 
         map.forEach((identifier, identifiers) -> {
-            source.sendFeedback(Text.of("-Anger disabled for "+identifier.getPath()+ ":"), false);
-            identifiers.forEach(identifier1 -> source.sendFeedback(Text.of("   -"+identifier1.getPath()), false));
+            source.sendFeedback(Text.of("-Anger disabled for " + identifier.getPath() + ":"), false);
+            identifiers.forEach(identifier1 -> source.sendFeedback(Text.of("   -" + identifier1.getPath()), false));
         });
 
         return 1;
     }
 
-    private int setAngry(Collection<? extends Entity> entities, Entity target){
+
+    private int setAngry(Collection<? extends Entity> entities, Entity target) {
         entities.forEach(entity -> {
             try {
                 ((MobEntity) entity).setTarget((LivingEntity) target);
-            }catch (Exception ignored){}
+            } catch (Exception ignored) {
+            }
         });
         return 1;
     }
