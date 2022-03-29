@@ -15,10 +15,10 @@ import java.util.Optional;
 @Mixin(PiglinBruteBrain.class)
 public class PiglinBruteBrainMixin {
 
-    @Inject(method = "method_30256", at = @At("RETURN"))
-    private static void tickActivitiesMixin(PiglinBruteEntity piglinBrute, CallbackInfo ci){
+    @Inject(method = "tick", at = @At("RETURN"))
+    private static void tickActivitiesMixin(PiglinBruteEntity piglinBrute, CallbackInfo ci) {
         Optional<LivingEntity> optional = piglinBrute.getBrain().getOptionalMemory(MemoryModuleType.ATTACK_TARGET);
-        if (optional.isPresent() && Main.getSaver().angerDisabled(optional.get(), piglinBrute)){
+        if (optional.isPresent() && Main.getSaver().angerDisabled(optional.get(), piglinBrute)) {
             piglinBrute.getBrain().forget(MemoryModuleType.ATTACK_TARGET);
             piglinBrute.setAttacking(false);
         }

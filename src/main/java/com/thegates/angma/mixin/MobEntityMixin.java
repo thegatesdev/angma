@@ -4,7 +4,6 @@ import com.thegates.angma.Main;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.ai.brain.MemoryModuleType;
-import net.minecraft.entity.ai.control.MoveControl;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
@@ -32,9 +31,6 @@ public abstract class MobEntityMixin extends LivingEntity {
     @Shadow
     @Nullable
     public abstract LivingEntity getTarget();
-
-    @Shadow
-    public abstract MoveControl getMoveControl();
 
 
     @Shadow
