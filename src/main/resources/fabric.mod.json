@@ -2,7 +2,6 @@
   "schemaVersion": 1,
   "id": "tg_angma",
   "version": "${version}",
-
   "name": "TheGate's Anger Management",
   "description": "Block certain mob types from attacking certain entities.",
   "authors": [
@@ -12,9 +11,7 @@
     "homepage": "",
     "sources": ""
   },
-
   "license": "GNU-GPLv3",
-
   "environment": "*",
   "entrypoints": {
     "main": [
@@ -24,11 +21,10 @@
   "mixins": [
     "angma.mixins.json"
   ],
-
   "depends": {
     "fabricloader": ">=0.11.3",
     "fabric": "*",
-    "minecraft": "1.17.x",
+    "minecraft": "1.18.2",
     "java": ">=16"
   },
   "suggests": {
