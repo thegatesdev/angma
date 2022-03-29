@@ -48,12 +48,12 @@ public abstract class MobEntityMixin extends LivingEntity {
 
     @Inject(at = @At("HEAD"), method = "setTarget(Lnet/minecraft/entity/LivingEntity;)V", cancellable = true)
     private void setTargetInject(LivingEntity target, CallbackInfo info) {
-        LivingEntity prevTarget = getTarget();
         // Not on client or no target, return.
         if (getEntityWorld().isClient() || target == null) {
             return;
         }
 
+        LivingEntity prevTarget = getTarget();
 
         if (Main.getSaver().angerDisabled(target, this)) {
             setTarget(prevTarget);
