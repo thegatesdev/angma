@@ -113,7 +113,7 @@ public class AngmaCommand {
         baseCommand.then(CommandManager.literal("listGlobal").executes(context -> listGlobalAngerTo(context.getSource())));
 
         baseCommand.then(CommandManager.literal("target")
-                .then(CommandManager.argument("entities", EntityArgumentType.entity())
+                .then(CommandManager.argument("entities", EntityArgumentType.entities())
                         .then(CommandManager.argument("target", EntityArgumentType.entity())
                                 .executes((context -> setAngry(EntityArgumentType.getEntities(context, "entities"), EntityArgumentType.getEntity(context, "target")))))));
 
