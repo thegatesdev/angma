@@ -56,7 +56,7 @@ public class AngmaCommand {
                 .then(CommandManager.literal("global")
                         .then(CommandManager.argument("for type", IdentifierArgumentType.identifier())
                                 .then(CommandManager.argument("from type", IdentifierArgumentType.identifier())
-                                        .executes(context -> addGlobalAngerType(context.getSource(), IdentifierArgumentType.getIdentifier(context, "for type"), IdentifierArgumentType.getIdentifier(context, "from type")))
+                                        .executes(context -> globalAngerType(context.getSource(), IdentifierArgumentType.getIdentifier(context, "for type"), IdentifierArgumentType.getIdentifier(context, "from type"), false))
                                 ))
                 )
                 .then(CommandManager.literal("specific")
@@ -103,7 +103,7 @@ public class AngmaCommand {
 
                         .then(CommandManager.argument("for type", IdentifierArgumentType.identifier()).suggests(ALL_ENTITIES)
                                 .then(CommandManager.argument("from type", IdentifierArgumentType.identifier()).suggests(ALL_ENTITIES)
-                                        .executes(context -> removeGlobalAngerType(context.getSource(), IdentifierArgumentType.getIdentifier(context, "for type"), IdentifierArgumentType.getIdentifier(context, "from type")))
+                                        .executes(context -> globalAngerType(context.getSource(), IdentifierArgumentType.getIdentifier(context, "for type"), IdentifierArgumentType.getIdentifier(context, "from type"), true))
                                 ))
                 )
         );
@@ -113,7 +113,7 @@ public class AngmaCommand {
         baseCommand.then(CommandManager.literal("listGlobal").executes(context -> listGlobalAngerTo(context.getSource())));
 
         baseCommand.then(CommandManager.literal("target")
-                .then(CommandManager.argument("entities", EntityArgumentType.entities())
+                .then(CommandManager.argument("entities", EntityArgumentType.entity())
                         .then(CommandManager.argument("target", EntityArgumentType.entity())
                                 .executes((context -> setAngry(EntityArgumentType.getEntities(context, "entities"), EntityArgumentType.getEntity(context, "target")))))));
 
@@ -121,20 +121,17 @@ public class AngmaCommand {
     }
 
 
-    private int addGlobalAngerType(ServerCommandSource source, Identifier type, Identifier typeToDisable) {
+    private int globalAngerType(ServerCommandSource source, Identifier forType, Identifier fromType, boolean remove) {
+        String response;
+        if (!remove) {
+            Main.getSaver().addGlobalMobType(forType, fromType);
+            response = "Added " + forType.getPath() + ".";
+        } else {
+            Main.getSaver().removeGlobalMobType(forType, fromType);
+            response = "Removed " + forType.getPath() + ".";
+        }
 
-        Main.getSaver().addGlobalMobType(type, typeToDisable);
-
-        source.sendFeedback(Text.of("Added " + type.getPath() + "!"), false);
-
-        return 1;
-    }
-
-
-    private int removeGlobalAngerType(ServerCommandSource source, Identifier type, Identifier typeToEnable) {
-        Main.getSaver().removeGlobalMobType(type, typeToEnable);
-
-        source.sendFeedback(Text.of("Removed " + type.getPath() + "!"), false);
+        source.sendFeedback(Text.of(response), false);
 
         return 1;
     }
@@ -245,12 +242,16 @@ public class AngmaCommand {
 
 
     private int setAngry(Collection<? extends Entity> entities, Entity target) {
-        entities.forEach(entity -> {
-            try {
-                ((MobEntity) entity).setTarget((LivingEntity) target);
-            } catch (Exception ignored) {
-            }
-        });
+        if (target instanceof LivingEntity livingTarget) {
+            entities.forEach(entity -> {
+                if (entity instanceof LivingEntity livingEntity) {
+                    livingEntity.setAttacker(livingEntity);
+                    if (livingEntity instanceof MobEntity mobEntity) {
+                        mobEntity.setTarget(livingTarget);
+                    }
+                }
+            });
+        }
         return 1;
     }
 
