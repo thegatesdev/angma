@@ -15,7 +15,7 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.tag.EntityTypeTags;
+import net.minecraft.tag.TagKey;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
@@ -31,7 +31,7 @@ import java.util.Set;
 public class AngmaCommand {
 
     public static final SuggestionProvider<ServerCommandSource> ALL_ENTITIES = SuggestionProviders.register(new Identifier("all_entities"), (commandContext, suggestionsBuilder) -> CommandSource.suggestFromIdentifier(Registry.ENTITY_TYPE.stream(), suggestionsBuilder, EntityType::getId, entityType -> new TranslatableText(Util.createTranslationKey("entity", EntityType.getId(entityType)))));
-    public static final SuggestionProvider<ServerCommandSource> ALL_TAGS = SuggestionProviders.register(new Identifier("all_tags"), (commandContext, suggestionsBuilder) -> CommandSource.suggestFromIdentifier(EntityTypeTags.getTagGroup().getTags().keySet(), suggestionsBuilder, i -> i, identifier -> new TranslatableText(Util.createTranslationKey("entity_tag", identifier))));
+    public static final SuggestionProvider<ServerCommandSource> ALL_TAGS = SuggestionProviders.register(new Identifier("all_tags"), (commandContext, suggestionsBuilder) -> CommandSource.suggestFromIdentifier(Registry.ENTITY_TYPE.streamTags(), suggestionsBuilder, TagKey::id, identifier -> new TranslatableText(Util.createTranslationKey("entity_tag", identifier.id()))));
 
 
     public void register(CommandDispatcher<ServerCommandSource> dispatcher, @SuppressWarnings("unused") boolean dedicated) {
@@ -181,7 +181,7 @@ public class AngmaCommand {
 
     private int addAngerTag(ServerCommandSource source, Collection<? extends Entity> targets, Identifier identifier) {
         AngerRegister saver = Main.getSaver();
-        targets.forEach(target -> saver.addTag(target.getUuid(), EntityTypeTags.getTagGroup().getTag(identifier)));
+        targets.forEach(target -> saver.addTag(target.getUuid(), identifier));
 
         source.sendFeedback(Text.of("Added tag #" + identifier + " to selected entities!"), false);
         return 1;
@@ -191,7 +191,7 @@ public class AngmaCommand {
     private int removeAngerTag(ServerCommandSource source, Collection<? extends Entity> targets, Identifier identifier) {
         AngerRegister saver = Main.getSaver();
 
-        targets.forEach(entity -> saver.removeTag(entity.getUuid(), EntityTypeTags.getTagGroup().getTag(identifier)));
+        targets.forEach(entity -> saver.removeTag(entity.getUuid(), identifier));
 
         source.sendFeedback(Text.of("Removed tag #" + identifier + " From selected entities!"), false);
 

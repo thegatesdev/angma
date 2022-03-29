@@ -5,9 +5,11 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtString;
-import net.minecraft.tag.EntityTypeTags;
-import net.minecraft.tag.Tag;
+import net.minecraft.tag.TagKey;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.registry.Registry;
+import net.minecraft.util.registry.RegistryEntry;
+import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.PersistentState;
 import org.jetbrains.annotations.NotNull;
 
@@ -184,8 +186,7 @@ public class AngerRegister extends PersistentState {
     }
 
 
-    public void addTag(UUID entityUUID, Tag<EntityType<?>> tag) {
-        Identifier tagId = EntityTypeTags.getTagGroup().getUncheckedTagId(tag);
+    public void addTag(UUID entityUUID, Identifier tagId) {
         if (!entityDisabled.containsKey(entityUUID)) {
             entityDisabled.put(entityUUID, new HashSet<>());
         }
@@ -201,9 +202,7 @@ public class AngerRegister extends PersistentState {
     }
 
 
-    public void removeTag(UUID entityUUID, Tag<EntityType<?>> tag) {
-        Identifier tagId = EntityTypeTags.getTagGroup().getUncheckedTagId(tag);
-
+    public void removeTag(UUID entityUUID, Identifier tagId) {
         if (!entityDisabled.containsKey(entityUUID)) {
             return;
         }
@@ -301,7 +300,7 @@ public class AngerRegister extends PersistentState {
         if (!entityDisabled.containsKey(target.getUuid())) {
             return false;
         }
-        return EntityTypeTags.getTagGroup().getTagsFor(type).stream().anyMatch(new HashSet<>(entityDisabled.get(target.getUuid()))::contains);
+        return getTagsFor(type).stream().map(TagKey::id).anyMatch(new HashSet<>(entityDisabled.get(target.getUuid()))::contains);
     }
 
 
@@ -322,6 +321,19 @@ public class AngerRegister extends PersistentState {
         if (!globalDisabled.containsKey(targetTag)) {
             return false;
         }
-        return EntityTypeTags.getTagGroup().getTagsFor(targetterType).stream().anyMatch(new HashSet<>(globalDisabled.get(targetTag))::contains);
+        return getTagsFor(targetterType).stream().map(TagKey::id).anyMatch(new HashSet<>(globalDisabled.get(targetTag))::contains);
+    }
+
+
+    public static List<TagKey<EntityType<?>>> getTagsFor(EntityType<?> entityType) {
+        Optional<RegistryKey<EntityType<?>>> key = Registry.ENTITY_TYPE.getKey(entityType);
+        if (key.isEmpty() || !Registry.ENTITY_TYPE.contains(key.get())) {
+            return Collections.emptyList();
+        }
+        Optional<RegistryEntry<EntityType<?>>> entry = Registry.ENTITY_TYPE.getEntry(key.get());
+        if (entry.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return entry.get().streamTags().toList();
     }
 }
