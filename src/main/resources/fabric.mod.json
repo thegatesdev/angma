@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "tg_angma",
   "version": "${version}",
-  "name": "TheGate's Anger Management",
+  "name": "TheGate's Anger Management mod",
   "description": "Block certain mob types from attacking certain entities.",
   "authors": [
     "TheGates"
