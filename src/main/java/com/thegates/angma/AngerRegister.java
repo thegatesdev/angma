@@ -4,7 +4,6 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtList;
-import net.minecraft.nbt.NbtString;
 import net.minecraft.tag.TagKey;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
@@ -18,9 +17,9 @@ import java.util.*;
 public class AngerRegister extends PersistentState {
 
     // Information to be saved into nbt and back.
-    private Map<UUID, Set<Identifier>> entityDisabled = new HashMap<>();
-    private Map<Identifier, Set<Identifier>> globalDisabled = new HashMap<>();
-    private Map<UUID, Set<UUID>> specificDisabled = new HashMap<>();
+    private final DisabledContainer<UUID, Identifier> entityDisabled = new DisabledContainer<>();
+    private final DisabledContainer<Identifier, Identifier> globalDisabled = new DisabledContainer<>();
+    private final DisabledContainer<UUID, UUID> specificDisabled = new DisabledContainer<>();
 
 
     // Default constructor, used for getting the persistentState.
@@ -36,83 +35,42 @@ public class AngerRegister extends PersistentState {
 
     // Create the information from the loaded nbt.
     private void createFromNbt(@NotNull NbtCompound nbt) {
-
+        entityDisabled.clear();
+        globalDisabled.clear();
+        specificDisabled.clear();
         NbtCompound entityDisabledInput = nbt.getCompound("playerDisabled");
         NbtCompound globalDisabledInput = nbt.getCompound("typeDisabled");
         NbtCompound specificDisabledInput = nbt.getCompound("specificDisabled");
 
-        Map<UUID, Set<Identifier>> entityDisabledOutput = new HashMap<>();
-        Map<Identifier, Set<Identifier>> globalDisabledOutput = new HashMap<>();
-        Map<UUID, Set<UUID>> specificDisabledOutput = new HashMap<>();
-
-        entityDisabledInput.getKeys().forEach(uuid -> {
-            NbtList nbtList = (NbtList) entityDisabledInput.get(uuid);
-            if (nbtList == null) {
-                return;
-            }
-            Set<Identifier> identifiers = new HashSet<>();
-            nbtList.forEach(nbtElement -> identifiers.add(Identifier.tryParse(nbtElement.asString())));
-            entityDisabledOutput.put(UUID.fromString(uuid), identifiers);
+        entityDisabledInput.getKeys().forEach(uuidString -> {
+            NbtList nbtList = (NbtList) entityDisabledInput.get(uuidString);
+            if (nbtList == null) return;
+            UUID uuid = UUID.fromString(uuidString);
+            nbtList.forEach(nbtElement -> entityDisabled.putOverHead(uuid, Identifier.tryParse(nbtElement.asString()), nbtList.size()));
         });
 
-        globalDisabledInput.getKeys().forEach(identifier -> {
-            NbtList nbtList = (NbtList) globalDisabledInput.get(identifier);
-            if (nbtList == null) {
-                return;
-            }
-            Set<Identifier> identifiers = new HashSet<>();
-            nbtList.forEach(nbtElement -> identifiers.add(Identifier.tryParse(nbtElement.asString())));
-            globalDisabledOutput.put(Identifier.tryParse(identifier), identifiers);
+        globalDisabledInput.getKeys().forEach(identifierString -> {
+            NbtList nbtList = (NbtList) globalDisabledInput.get(identifierString);
+            if (nbtList == null) return;
+            Identifier identifier = Identifier.tryParse(identifierString);
+            nbtList.forEach(nbtElement -> globalDisabled.putOverHead(identifier, Identifier.tryParse(nbtElement.asString()), nbtList.size()));
         });
 
         specificDisabledInput.getKeys().forEach(key -> {
             NbtList nbtList = (NbtList) globalDisabledInput.get(key);
-            if (nbtList == null) {
-                return;
-            }
-            Set<UUID> uuids = new HashSet<>();
-            nbtList.forEach(nbtElement -> uuids.add(UUID.fromString(nbtElement.asString())));
-            specificDisabledOutput.put(UUID.fromString(key), uuids);
+            if (nbtList == null) return;
+            UUID uuid = UUID.fromString(key);
+            nbtList.forEach(nbtElement -> specificDisabled.putOverHead(uuid, UUID.fromString(nbtElement.asString()), nbtList.size()));
         });
-
-        entityDisabled = entityDisabledOutput;
-        globalDisabled = globalDisabledOutput;
-        specificDisabled = specificDisabledOutput;
     }
 
 
     // WriteNbt is called when a PersistentState is marked dirty, and the game saves.
     @Override
     public NbtCompound writeNbt(NbtCompound nbt) {
-
-        // Create playerDisabled nbt data.
-        NbtCompound playerDisabledNbt = new NbtCompound();
-        entityDisabled.keySet().forEach(uuid -> {
-            NbtList identifiersNbt = new NbtList();
-            entityDisabled.get(uuid).forEach(identifier -> identifiersNbt.add(NbtString.of(identifier.toString())));
-            playerDisabledNbt.put(uuid.toString(), identifiersNbt);
-        });
-
-        // Create globalDisabled nbt data
-        NbtCompound globalDisabledNbt = new NbtCompound();
-        globalDisabled.keySet().forEach(identifier -> {
-            NbtList identifiersNbt = new NbtList();
-            globalDisabled.get(identifier).forEach(identifier1 -> identifiersNbt.add(NbtString.of(identifier1.toString())));
-            globalDisabledNbt.put(identifier.toString(), identifiersNbt);
-        });
-
-        NbtCompound specificDisabledNbt = new NbtCompound();
-        specificDisabled.keySet().forEach(uuid -> {
-            NbtList uuidList = new NbtList();
-            specificDisabled.get(uuid).forEach(uuid1 -> uuidList.add(NbtString.of(uuid1.toString())));
-            specificDisabledNbt.put(uuid.toString(), uuidList);
-        });
-
-
-        nbt.put("playerDisabled", playerDisabledNbt);
-        nbt.put("typeDisabled", globalDisabledNbt);
-        nbt.put("specificDisabled", specificDisabledNbt);
-
+        nbt.put("playerDisabled", entityDisabled.populateNbt(UUID::toString, Identifier::toString));
+        nbt.put("typeDisabled", globalDisabled.populateNbt(Identifier::toString, Identifier::toString));
+        nbt.put("specificDisabled", specificDisabled.populateNbt(UUID::toString, UUID::toString));
         return nbt;
     }
 
@@ -144,7 +102,7 @@ public class AngerRegister extends PersistentState {
 
 
     public Map<Identifier, Set<Identifier>> getGlobalDisabled() {
-        return new HashMap<>(globalDisabled);   // TODO is this necessary?
+        return Collections.unmodifiableMap(globalDisabled);
     }
 
 
