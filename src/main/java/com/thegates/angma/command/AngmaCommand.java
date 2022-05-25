@@ -141,7 +141,7 @@ public class AngmaCommand {
         Optional<EntityType<?>> type = EntityType.get(typeId.toString());
         if (type.isEmpty()) {
             return 0;
-        }// TODO
+        }
 
         AngerRegister saver = Main.getSaver();
 
