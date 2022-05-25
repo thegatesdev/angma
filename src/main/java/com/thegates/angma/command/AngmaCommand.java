@@ -244,11 +244,8 @@ public class AngmaCommand {
     private int setAngry(Collection<? extends Entity> entities, Entity target) {
         if (target instanceof LivingEntity livingTarget) {
             entities.forEach(entity -> {
-                if (entity instanceof LivingEntity livingEntity) {
-                    livingEntity.setAttacker(livingEntity);
-                    if (livingEntity instanceof MobEntity mobEntity) {
-                        mobEntity.setTarget(livingTarget);
-                    }
+                if (entity instanceof MobEntity mobEntity) {
+                    mobEntity.setTarget(livingTarget);
                 }
             });
         }
