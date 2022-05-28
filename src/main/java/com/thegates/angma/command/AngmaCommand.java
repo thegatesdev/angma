@@ -68,23 +68,18 @@ public class AngmaCommand {
 
         baseCommand.then(CommandManager.literal("enable")
                 .then(CommandManager.literal("entity")
-
-                        .then(CommandManager.literal("type")
-                                .then(CommandManager.argument("for entities", EntityArgumentType.entities())
+                        .then(CommandManager.argument("for entities", EntityArgumentType.entities())
+                                .then(CommandManager.literal("tag")
+                                        .then(CommandManager.argument("from tag", IdentifierArgumentType.identifier()).suggests(ALL_TAGS)
+                                                .executes(context -> removeAngerTag(context.getSource(), EntityArgumentType.getEntities(context, "for entities"), IdentifierArgumentType.getIdentifier(context, "from tag")))
+                                        ))
+                                .then(CommandManager.literal("type")
                                         .then(CommandManager.argument("from type", IdentifierArgumentType.identifier()).suggests(ALL_ENTITIES)
                                                 .executes(context -> removeAngerType(context.getSource(), EntityArgumentType.getEntities(context, "for entities"), IdentifierArgumentType.getIdentifier(context, "from type")))
                                         ))
                         )
-
-                        .then(CommandManager.literal("tag")
-                                .then(CommandManager.argument("for entities", EntityArgumentType.entities())
-                                        .then(CommandManager.argument("from tag", IdentifierArgumentType.identifier()).suggests(ALL_TAGS)
-                                                .executes(context -> removeAngerTag(context.getSource(), EntityArgumentType.getEntities(context, "for entities"), IdentifierArgumentType.getIdentifier(context, "from tag")))
-                                        ))
-                        )
                 )
                 .then(CommandManager.literal("specific")
-
                         .then(CommandManager.argument("for entity", EntityArgumentType.entity())
                                 .then(CommandManager.argument("from entity", EntityArgumentType.entity())
                                         .executes(context -> {
@@ -95,7 +90,6 @@ public class AngmaCommand {
                                 ))
                 )
                 .then(CommandManager.literal("global")
-
                         .then(CommandManager.argument("for type", IdentifierArgumentType.identifier()).suggests(ALL_ENTITIES)
                                 .then(CommandManager.argument("from type", IdentifierArgumentType.identifier()).suggests(ALL_ENTITIES)
                                         .executes(context -> globalAngerType(context.getSource(), IdentifierArgumentType.getIdentifier(context, "for type"), IdentifierArgumentType.getIdentifier(context, "from type"), true))
