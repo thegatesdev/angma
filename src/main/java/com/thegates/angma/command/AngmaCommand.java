@@ -3,8 +3,8 @@ package com.thegates.angma.command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
+import com.thegates.angma.AngMa;
 import com.thegates.angma.AngerRegister;
-import com.thegates.angma.Main;
 import com.thegates.angma.TagOrTypeEntry;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.argument.EntityArgumentType;
@@ -58,7 +58,7 @@ public class AngmaCommand {
                         .then(CommandManager.argument("for entity", EntityArgumentType.entity())
                                 .then(CommandManager.argument("from entity", EntityArgumentType.entity())
                                         .executes(context -> {
-                                            Main.getAngerRegister().addSpecific(EntityArgumentType.getEntity(context, "for entity").getUuid(), EntityArgumentType.getEntity(context, "from entity").getUuid());
+                                            AngMa.getAngerRegister().addSpecific(EntityArgumentType.getEntity(context, "for entity").getUuid(), EntityArgumentType.getEntity(context, "from entity").getUuid());
                                             context.getSource().sendFeedback(Text.of("Added specific entity to list."), false);
                                             return 1;
                                         })
@@ -83,7 +83,7 @@ public class AngmaCommand {
                         .then(CommandManager.argument("for entity", EntityArgumentType.entity())
                                 .then(CommandManager.argument("from entity", EntityArgumentType.entity())
                                         .executes(context -> {
-                                            Main.getAngerRegister().removeSpecific(EntityArgumentType.getEntity(context, "for entity").getUuid(), EntityArgumentType.getEntity(context, "from entity").getUuid());
+                                            AngMa.getAngerRegister().removeSpecific(EntityArgumentType.getEntity(context, "for entity").getUuid(), EntityArgumentType.getEntity(context, "from entity").getUuid());
                                             context.getSource().sendFeedback(Text.of("Added specific entity to list."), false);
                                             return 1;
                                         })
@@ -113,10 +113,10 @@ public class AngmaCommand {
     private int globalAngerType(ServerCommandSource source, Identifier forType, Identifier fromType, boolean remove) {
         String response;
         if (!remove) {
-            Main.getAngerRegister().addGlobalMobType(forType, fromType);
+            AngMa.getAngerRegister().addGlobalMobType(forType, fromType);
             response = "Added " + forType.getPath() + ".";
         } else {
-            Main.getAngerRegister().removeGlobalMobType(forType, fromType);
+            AngMa.getAngerRegister().removeGlobalMobType(forType, fromType);
             response = "Removed " + forType.getPath() + ".";
         }
 
@@ -132,7 +132,7 @@ public class AngmaCommand {
             return 0;
         }// TODO
 
-        AngerRegister saver = Main.getAngerRegister();
+        AngerRegister saver = AngMa.getAngerRegister();
 
         int success = 0;
 
@@ -154,7 +154,7 @@ public class AngmaCommand {
 
     private int removeAngerType(ServerCommandSource source, Collection<? extends Entity> targets, Identifier typeId) {
 
-        AngerRegister saver = Main.getAngerRegister();
+        AngerRegister saver = AngMa.getAngerRegister();
         for (Entity target : targets) {
             saver.removeMobType(target.getUuid(), typeId);
         }
@@ -166,7 +166,7 @@ public class AngmaCommand {
 
 
     private int addAngerTag(ServerCommandSource source, Collection<? extends Entity> targets, Identifier identifier) {
-        AngerRegister saver = Main.getAngerRegister();
+        AngerRegister saver = AngMa.getAngerRegister();
         targets.forEach(target -> saver.addTag(target.getUuid(), identifier));
 
         source.sendFeedback(Text.of("Added tag #" + identifier + " to selected entities!"), false);
@@ -175,7 +175,7 @@ public class AngmaCommand {
 
 
     private int removeAngerTag(ServerCommandSource source, Collection<? extends Entity> targets, Identifier identifier) {
-        AngerRegister saver = Main.getAngerRegister();
+        AngerRegister saver = AngMa.getAngerRegister();
 
         targets.forEach(entity -> saver.removeTag(entity.getUuid(), identifier));
 
@@ -187,10 +187,10 @@ public class AngmaCommand {
 
     private int listAngerFor(ServerCommandSource source) {
         if (source.getEntity() == null) {
-            source.sendError(Text.of(Main.MOD_PREFIX + "Console cannot list mobs!"));
+            source.sendError(Text.of(AngMa.MOD_PREFIX + "Console cannot list mobs!"));
             return 0;
         }
-        AngerRegister angerRegister = source.getWorld().getPersistentStateManager().getOrCreate(AngerRegister::new, AngerRegister::new, Main.MOD_ID);
+        AngerRegister angerRegister = AngMa.getAngerRegister();
 
         List<Identifier> disabledTypes = angerRegister.getDisabledTypes(source.getEntity().getUuid());
         if (disabledTypes == null || disabledTypes.isEmpty()) {
@@ -213,7 +213,7 @@ public class AngmaCommand {
 
 
     private int listGlobalAngerTo(ServerCommandSource source) {
-        Map<TagOrTypeEntry, Set<TagOrTypeEntry>> map = Main.getAngerRegister().getGlobalDisabled();
+        Map<TagOrTypeEntry, Set<TagOrTypeEntry>> map = AngMa.getAngerRegister().getGlobalDisabled();
         if (map == null || map.isEmpty()) {
             source.sendFeedback(Text.of("No global anger disabled!"), false);
             return 1;

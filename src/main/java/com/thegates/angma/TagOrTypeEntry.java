@@ -4,8 +4,6 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.tag.TagKey;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
-import net.minecraft.util.registry.RegistryEntry;
-import net.minecraft.util.registry.RegistryKey;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -46,14 +44,6 @@ public class TagOrTypeEntry {
         if (tagKey != null) return tagKey.id().toString();
         else if (entityType != null) return entityType.getUntranslatedName();
         else throw new IllegalStateException("Both tagId and entityType are null!");
-    }
-
-    public boolean hasTag(EntityType<?> entityType) {
-        Optional<RegistryKey<EntityType<?>>> key = Registry.ENTITY_TYPE.getKey(entityType);
-        if (key.isEmpty()) return false;
-        Optional<RegistryEntry<EntityType<?>>> entry = Registry.ENTITY_TYPE.getEntry(key.get());
-        if (entry.isEmpty()) return false;
-        return entry.get().streamTags().anyMatch(tagKey1 -> tagKey == tagKey1);
     }
 
     public static TagOrTypeEntry parse(Identifier identifier) {

@@ -8,7 +8,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.World;
 
-public class Main implements ModInitializer {
+public class AngMa implements ModInitializer {
 
     public static String MOD_ID = "tg_angma";
 

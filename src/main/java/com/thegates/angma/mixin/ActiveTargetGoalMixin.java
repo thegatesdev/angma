@@ -1,6 +1,6 @@
 package com.thegates.angma.mixin;
 
-import com.thegates.angma.Main;
+import com.thegates.angma.AngMa;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.ai.TargetPredicate;
 import net.minecraft.entity.ai.goal.ActiveTargetGoal;
@@ -22,9 +22,9 @@ public class ActiveTargetGoalMixin {
     private <T> void initInject(MobEntity mob, Class<T> targetClass, int reciprocalChance, boolean checkVisibility, boolean checkCanNavigate, Predicate<LivingEntity> targetPredicateInput, CallbackInfo ci) {
         if (targetPredicate != null)
             if (targetPredicateInput == null) {
-                targetPredicate.setPredicate(livingEntity -> !Main.getAngerRegister().isAngerDisabled(livingEntity, mob));
+                targetPredicate.setPredicate(livingEntity -> !AngMa.getAngerRegister().isAngerDisabled(livingEntity, mob));
             } else {
-                targetPredicate.setPredicate(targetPredicateInput.and(livingEntity -> !Main.getAngerRegister().isAngerDisabled(livingEntity, mob)));
+                targetPredicate.setPredicate(targetPredicateInput.and(livingEntity -> !AngMa.getAngerRegister().isAngerDisabled(livingEntity, mob)));
             }
     }
 }

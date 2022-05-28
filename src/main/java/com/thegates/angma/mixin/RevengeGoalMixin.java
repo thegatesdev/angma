@@ -1,6 +1,6 @@
 package com.thegates.angma.mixin;
 
-import com.thegates.angma.Main;
+import com.thegates.angma.AngMa;
 import net.minecraft.entity.ai.goal.RevengeGoal;
 import net.minecraft.entity.ai.goal.TrackTargetGoal;
 import net.minecraft.entity.mob.MobEntity;
@@ -16,9 +16,9 @@ public abstract class RevengeGoalMixin extends TrackTargetGoal {
         super(mob, checkVisibility);
     }
 
-    @Inject(method = "canStart", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/mob/MobEntity;getAttacker()Lnet/minecraft/entity/LivingEntity;", shift = At.Shift.AFTER), cancellable = true)
+    @Inject(method = "canStart", at = @At(value = "INVOKE_ASSIGN", target = "Lnet/minecraft/entity/mob/MobEntity;getAttacker()Lnet/minecraft/entity/LivingEntity;", shift = At.Shift.AFTER), cancellable = true)
     public void canStartInject(CallbackInfoReturnable<Boolean> cir) {
-        if (Main.getAngerRegister().isAngerDisabled(mob.getAttacker(), mob)) {
+        if (AngMa.getAngerRegister().isAngerDisabled(mob.getAttacker(), mob)) {
             cir.setReturnValue(false);
         }
     }

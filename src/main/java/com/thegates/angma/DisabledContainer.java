@@ -48,6 +48,7 @@ public class DisabledContainer<T, G> {
 
     public NbtCompound populateNbt(Function<T, String> tToString, Function<G, String> gToString) {
         NbtCompound compound = new NbtCompound();
+        if (disabledMap.isEmpty()) return compound;
         disabledMap.keySet().forEach(t -> {
             NbtList nbtList = new NbtList();
             disabledMap.get(t).forEach(g -> nbtList.add(NbtString.of(gToString.apply(g))));
@@ -57,10 +58,11 @@ public class DisabledContainer<T, G> {
     }
 
     public void readNbt(NbtCompound nbtCompound, Function<String, T> stringToT, Function<String, G> stringToG) {
-        nbtCompound.getKeys().forEach(s -> {
-            NbtList list = (NbtList) nbtCompound.get(s);
-            if (list == null) return;
-            list.forEach(nbtElement -> putOverHead(stringToT.apply(s), stringToG.apply(nbtElement.asString()), list.size()));
-        });
+        if (!nbtCompound.isEmpty())
+            nbtCompound.getKeys().forEach(s -> {
+                NbtList list = (NbtList) nbtCompound.get(s);
+                if (list == null) return;
+                list.forEach(nbtElement -> putOverHead(stringToT.apply(s), stringToG.apply(nbtElement.asString()), list.size()));
+            });
     }
 }
