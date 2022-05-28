@@ -21,6 +21,8 @@ public class AngerRegister extends PersistentState {
     private final DisabledContainer<UUID, UUID> specificEntityDisabled = new DisabledContainer<>();
     private final DisabledContainer<TagOrTypeEntry, TagOrTypeEntry> globalDisabled = new DisabledContainer<>();
 
+    private final WeakHashMap<EntityType<?>, RegistryEntry<EntityType<?>>> entityTypeCache = new WeakHashMap<>(1, 0.6f);
+
 
     // Default constructor, used for getting the persistentState.
     public AngerRegister() {
@@ -38,13 +40,22 @@ public class AngerRegister extends PersistentState {
         entityDisabled.clear();
         globalDisabled.clear();
         specificEntityDisabled.clear();
-        NbtCompound entityDisabledInput = nbt.getCompound("playerDisabled");
-        NbtCompound globalDisabledInput = nbt.getCompound("typeDisabled");
-        NbtCompound specificDisabledInput = nbt.getCompound("specificDisabled");
+        {
+            NbtCompound entityDisabledInput = nbt.getCompound("playerDisabled");
+            if (!entityDisabledInput.isEmpty())
+                entityDisabled.readNbt(entityDisabledInput, UUID::fromString, TagOrTypeEntry::parse);
+        }
+        {
+            NbtCompound globalDisabledInput = nbt.getCompound("typeDisabled");
+            if (!globalDisabledInput.isEmpty())
+                globalDisabled.readNbt(globalDisabledInput, TagOrTypeEntry::parse, TagOrTypeEntry::parse);
+        }
+        {
+            NbtCompound specificDisabledInput = nbt.getCompound("specificDisabled");
+            if (!specificDisabledInput.isEmpty())
+                specificEntityDisabled.readNbt(specificDisabledInput, UUID::fromString, UUID::fromString);
+        }
 
-        entityDisabled.readNbt(entityDisabledInput, UUID::fromString, TagOrTypeEntry::parse);
-        globalDisabled.readNbt(globalDisabledInput, TagOrTypeEntry::parse, TagOrTypeEntry::parse);
-        specificEntityDisabled.readNbt(specificDisabledInput, UUID::fromString, UUID::fromString);
     }
 
 
@@ -137,11 +148,18 @@ public class AngerRegister extends PersistentState {
             if (ret) return true;
         }
         {   // Check TAGS
-            Optional<RegistryKey<EntityType<?>>> key = Registry.ENTITY_TYPE.getKey(type2);
-            if (key.isEmpty()) return false;
-            Optional<RegistryEntry<EntityType<?>>> entry = Registry.ENTITY_TYPE.getEntry(key.get());
-            if (entry.isEmpty()) return false;
-            return entry.get().streamTags().anyMatch(tagKey -> isGlobalAngerDisabled(entity1.getType(), tagKey) || isEntityAngerDisabled(uuid1, tagKey));
+            RegistryEntry<EntityType<?>> entry;
+            if (entityTypeCache.containsKey(type2)) {
+                entry = entityTypeCache.get(type2);
+            } else {
+                Optional<RegistryKey<EntityType<?>>> key = Registry.ENTITY_TYPE.getKey(type2);
+                if (key.isEmpty()) return false;
+                Optional<RegistryEntry<EntityType<?>>> optionalEntry = Registry.ENTITY_TYPE.getEntry(key.get());
+                if (optionalEntry.isEmpty()) return false;
+                entry = optionalEntry.get();
+                entityTypeCache.put(type2, entry);
+            }
+            return entry.streamTags().anyMatch(tagKey -> isGlobalAngerDisabled(entity1.getType(), tagKey) || isEntityAngerDisabled(uuid1, tagKey));
         }
     }
 
