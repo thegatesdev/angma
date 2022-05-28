@@ -22,17 +22,19 @@ public abstract class EndermanEntityMixin extends HostileEntity {
     }
 
     @Inject(method = "isPlayerStaring(Lnet/minecraft/entity/player/PlayerEntity;)Z", at = @At("HEAD"), cancellable = true)
-    void isPlayerStaringInject(PlayerEntity player, CallbackInfoReturnable<Boolean> info){
-        if (Main.getSaver().angerDisabled(player, this)) {
+    void isPlayerStaringInject(PlayerEntity player, CallbackInfoReturnable<Boolean> info) {
+        if (Main.getAngerRegister().isAngerDisabled(player, this)) {
             info.setReturnValue(false);
         }
     }
 
     @Inject(method = "damage(Lnet/minecraft/entity/damage/DamageSource;F)Z", at = @At("TAIL"))
-    public void setAttackerInject(DamageSource source, float amount, CallbackInfoReturnable<Boolean> info){
-        if (getAttacker() == null) {return;}
+    public void setAttackerInject(DamageSource source, float amount, CallbackInfoReturnable<Boolean> info) {
+        if (getAttacker() == null) {
+            return;
+        }
 
-        if (Main.getSaver().angerDisabled(getAttacker(), this)){
+        if (Main.getAngerRegister().isAngerDisabled(getAttacker(), this)) {
             setAttacker(null);
         }
     }

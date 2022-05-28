@@ -16,9 +16,9 @@ import java.util.Optional;
 public class HoglinBrainMixin {
 
     @Inject(method = "refreshActivities", at = @At("RETURN"))
-    private static void refreshActivitiesInject(HoglinEntity hoglin, CallbackInfo ci){
+    private static void refreshActivitiesInject(HoglinEntity hoglin, CallbackInfo ci) {
         Optional<LivingEntity> optional = hoglin.getBrain().getOptionalMemory(MemoryModuleType.ATTACK_TARGET);
-        if (optional.isPresent() && Main.getSaver().angerDisabled(optional.get(), hoglin)){
+        if (optional.isPresent() && Main.getAngerRegister().isAngerDisabled(optional.get(), hoglin)) {
             hoglin.getBrain().forget(MemoryModuleType.ATTACK_TARGET);
             hoglin.setAttacking(false);
         }

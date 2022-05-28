@@ -51,7 +51,7 @@ public abstract class MobEntityMixin extends LivingEntity {
 
         LivingEntity prevTarget = getTarget();
 
-        if (Main.getSaver().angerDisabled(target, this)) {
+        if (Main.getAngerRegister().isAngerDisabled(target, this)) {
             setTarget(prevTarget);
             setAttacker(prevTarget);
             setAttacking(false);
@@ -70,7 +70,7 @@ public abstract class MobEntityMixin extends LivingEntity {
         }
 
 
-        if (!Main.getSaver().angerDisabled(targetEntity, this)) {
+        if (!Main.getAngerRegister().isAngerDisabled(targetEntity, this)) {
             return;
         }
 

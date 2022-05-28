@@ -14,12 +14,13 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
+@SuppressWarnings("UnusedReturnValue")
 public class AngerRegister extends PersistentState {
 
     // Information to be saved into nbt and back.
-    private final DisabledContainer<UUID, Identifier> entityDisabled = new DisabledContainer<>();
-    private final DisabledContainer<Identifier, Identifier> globalDisabled = new DisabledContainer<>();
-    private final DisabledContainer<UUID, UUID> specificDisabled = new DisabledContainer<>();
+    private final DisabledContainer<UUID, TagOrTypeEntry> entityDisabled = new DisabledContainer<>();
+    private final DisabledContainer<UUID, UUID> specificEntityDisabled = new DisabledContainer<>();
+    private final DisabledContainer<TagOrTypeEntry, TagOrTypeEntry> globalDisabled = new DisabledContainer<>();
 
 
     // Default constructor, used for getting the persistentState.
@@ -37,7 +38,7 @@ public class AngerRegister extends PersistentState {
     private void createFromNbt(@NotNull NbtCompound nbt) {
         entityDisabled.clear();
         globalDisabled.clear();
-        specificDisabled.clear();
+        specificEntityDisabled.clear();
         NbtCompound entityDisabledInput = nbt.getCompound("playerDisabled");
         NbtCompound globalDisabledInput = nbt.getCompound("typeDisabled");
         NbtCompound specificDisabledInput = nbt.getCompound("specificDisabled");
@@ -46,21 +47,27 @@ public class AngerRegister extends PersistentState {
             NbtList nbtList = (NbtList) entityDisabledInput.get(uuidString);
             if (nbtList == null) return;
             UUID uuid = UUID.fromString(uuidString);
-            nbtList.forEach(nbtElement -> entityDisabled.putOverHead(uuid, Identifier.tryParse(nbtElement.asString()), nbtList.size()));
+            nbtList.forEach(nbtElement -> {
+                TagOrTypeEntry parsed = TagOrTypeEntry.parse(Identifier.tryParse(nbtElement.asString()));
+                if (parsed != null) entityDisabled.putOverHead(uuid, parsed, nbtList.size());
+            });
         });
 
         globalDisabledInput.getKeys().forEach(identifierString -> {
             NbtList nbtList = (NbtList) globalDisabledInput.get(identifierString);
             if (nbtList == null) return;
             Identifier identifier = Identifier.tryParse(identifierString);
-            nbtList.forEach(nbtElement -> globalDisabled.putOverHead(identifier, Identifier.tryParse(nbtElement.asString()), nbtList.size()));
+            nbtList.forEach(nbtElement -> {
+                TagOrTypeEntry parse = TagOrTypeEntry.parse(Identifier.tryParse(nbtElement.asString()));
+                if (parse != null) globalDisabled.putOverHead(TagOrTypeEntry.parse(identifier), parse, nbtList.size());
+            });
         });
 
         specificDisabledInput.getKeys().forEach(key -> {
             NbtList nbtList = (NbtList) globalDisabledInput.get(key);
             if (nbtList == null) return;
             UUID uuid = UUID.fromString(key);
-            nbtList.forEach(nbtElement -> specificDisabled.putOverHead(uuid, UUID.fromString(nbtElement.asString()), nbtList.size()));
+            nbtList.forEach(nbtElement -> specificEntityDisabled.putOverHead(uuid, UUID.fromString(nbtElement.asString()), nbtList.size()));
         });
     }
 
@@ -68,230 +75,116 @@ public class AngerRegister extends PersistentState {
     // WriteNbt is called when a PersistentState is marked dirty, and the game saves.
     @Override
     public NbtCompound writeNbt(NbtCompound nbt) {
-        nbt.put("playerDisabled", entityDisabled.populateNbt(UUID::toString, Identifier::toString));
-        nbt.put("typeDisabled", globalDisabled.populateNbt(Identifier::toString, Identifier::toString));
-        nbt.put("specificDisabled", specificDisabled.populateNbt(UUID::toString, UUID::toString));
+        nbt.put("playerDisabled", entityDisabled.populateNbt(UUID::toString, TagOrTypeEntry::string));
+        nbt.put("typeDisabled", globalDisabled.populateNbt(TagOrTypeEntry::string, TagOrTypeEntry::string));
+        nbt.put("specificDisabled", specificEntityDisabled.populateNbt(UUID::toString, UUID::toString));
         return nbt;
     }
 
 
-    public Set<Identifier> getDisabledTypes(UUID uuid) {
-        Set<Identifier> dTypes = new HashSet<>();
-        Set<Identifier> all = entityDisabled.get(uuid);
-        if (all == null) {
-            return dTypes;
-        }
-        for (Identifier typeOrTag : entityDisabled.get(uuid)) {
-            if (EntityType.get(typeOrTag.toString()).isPresent()) {
-                dTypes.add(typeOrTag);
-            }
-        }
-        return dTypes;
+    public List<Identifier> getDisabledTypes(UUID uuid) {
+        return entityDisabled.get(uuid).stream().filter(TagOrTypeEntry::isType).map(TagOrTypeEntry::string).map(Identifier::tryParse).filter(Objects::nonNull).toList();
     }
 
 
-    public Set<Identifier> getDisabledTags(UUID uuid) {
-        Set<Identifier> all = entityDisabled.get(uuid);
-        if (all == null) {
-            return new HashSet<>();
-        }
-        Set<Identifier> dTags = new HashSet<>(all);
-        dTags.removeAll(getDisabledTypes(uuid));
-        return dTags;
+    public List<Identifier> getDisabledTags(UUID uuid) {
+        return entityDisabled.get(uuid).stream().filter(TagOrTypeEntry::getTagKey).map(TagOrTypeEntry::string).map(Identifier::tryParse).filter(Objects::nonNull).toList();
     }
 
 
-    public Map<Identifier, Set<Identifier>> getGlobalDisabled() {
-        return Collections.unmodifiableMap(globalDisabled);
+    public Map<TagOrTypeEntry, Set<TagOrTypeEntry>> getGlobalDisabled() {
+        return globalDisabled.read();
     }
 
 
-    // Adds a mob to the player's list, creating the player if necessary.
-    public boolean addMobType(UUID entityUUID, Identifier mobId) {
-        // If the player does not exist in the map, create it.
-        if (!entityDisabled.containsKey(entityUUID)) {
-            entityDisabled.put(entityUUID, new HashSet<>());
-        } else if (entityDisabled.get(entityUUID).contains(mobId)) {
-            return false;
-            // Already exists
-        }
-
-        // Add mob to list.
-        entityDisabled.get(entityUUID).add(mobId);
-        // Make sure it gets saved.
+    public boolean addMobType(UUID entityUUID, Identifier type) {
+        boolean ret = entityDisabled.put(entityUUID, TagOrTypeEntry.type(type));
         markDirty();
-
-        return true;
+        return ret;
     }
 
 
-    public void removeMobType(UUID entityUUID, Identifier mobId) {
-        // If the player does not exist in the map, create it.
-        if (!entityDisabled.containsKey(entityUUID)) {
-            return;
-        }
-
-        if (!entityDisabled.get(entityUUID).contains(mobId)) {
-            return;
-        }
-        // Remove mob from list.
-        entityDisabled.get(entityUUID).remove(mobId);
-
-        if (entityDisabled.get(entityUUID).size() == 0) {
-            entityDisabled.remove(entityUUID);
-        }
+    public boolean removeMobType(UUID entityUUID, Identifier type) {
+        boolean ret = entityDisabled.remove(entityUUID, TagOrTypeEntry.type(type));
         markDirty();
+        return ret;
     }
 
 
-    public void addTag(UUID entityUUID, Identifier tagId) {
-        if (!entityDisabled.containsKey(entityUUID)) {
-            entityDisabled.put(entityUUID, new HashSet<>());
-        }
-
-        // Already exists
-        if (entityDisabled.get(entityUUID).contains(tagId)) {
-            return;
-        }
-
-        entityDisabled.get(entityUUID).add(tagId);
-
+    public boolean addTag(UUID entityUUID, Identifier tag) {
+        boolean ret = entityDisabled.put(entityUUID, TagOrTypeEntry.tag(tag));
         markDirty();
+        return ret;
     }
 
 
-    public void removeTag(UUID entityUUID, Identifier tagId) {
-        if (!entityDisabled.containsKey(entityUUID)) {
-            return;
-        }
-        if (!entityDisabled.get(entityUUID).contains(tagId)) {
-            return;
-        }
-
-        entityDisabled.get(entityUUID).remove(tagId);
-
-        if (entityDisabled.get(entityUUID).size() <= 0) {
-            entityDisabled.remove(entityUUID);
-        }
-
+    public boolean removeTag(UUID entityUUID, Identifier tagId) {
+        boolean ret = entityDisabled.remove(entityUUID, TagOrTypeEntry.tag(tagId));
         markDirty();
+        return ret;
     }
 
 
-    public void addSpecific(UUID entity, UUID targeter) {
-        if (!specificDisabled.containsKey(entity)) {
-            specificDisabled.put(entity, new HashSet<>());
-        }
-        specificDisabled.get(entity).add(targeter);
-    }
-
-
-    public void removeSpecific(UUID entity, UUID targeter) {
-        if (!specificDisabled.containsKey(entity)) {
-            return;
-        }
-        specificDisabled.get(entity).remove(targeter);
-        if (specificDisabled.get(entity).size() <= 0) {
-            specificDisabled.remove(entity);
-        }
-    }
-
-
-    public void addGlobalMobType(Identifier key, Identifier toDisable) {
-        if (!globalDisabled.containsKey(key)) {
-            globalDisabled.put(key, new HashSet<>());
-        } else if (globalDisabled.get(key).contains(toDisable)) {
-            return;
-        }
-
-        globalDisabled.get(key).add(toDisable);
-
+    public boolean addSpecific(UUID entity, UUID targeter) {
+        boolean ret = specificEntityDisabled.put(entity, targeter);
         markDirty();
+        return ret;
     }
 
 
-    public void removeGlobalMobType(Identifier key, Identifier toEnable) {
-        if (!globalDisabled.containsKey(key)) {
-            return;
-        }
-
-        if (!globalDisabled.get(key).contains(toEnable)) {
-            return;
-        }
-
-        globalDisabled.get(key).remove(toEnable);
-
-        if (globalDisabled.get(key).size() == 0) {
-            globalDisabled.remove(key);
-        }
+    public boolean removeSpecific(UUID entity, UUID targeter) {
+        boolean ret = specificEntityDisabled.remove(entity, targeter);
         markDirty();
+        return ret;
     }
 
 
-    public boolean angerDisabled(Entity target, Entity targetter) {
-        return hasAngerDisabled(target, targetter) || isAngerDisabled(EntityType.getId(target.getType()), targetter.getType()) || specificDisabled(target.getUuid(), targetter.getUuid());
+    public boolean addGlobalMobType(Identifier key, Identifier toDisable) {
+        boolean ret = globalDisabled.put(TagOrTypeEntry.parse(key), TagOrTypeEntry.parse(toDisable));
+        markDirty();
+        return ret;
     }
 
 
-    private boolean specificDisabled(UUID target, UUID targeter) {
-        if (!specificDisabled.containsKey(target)) {
-            return false;
+    public boolean removeGlobalMobType(Identifier key, Identifier toEnable) {
+        boolean ret = globalDisabled.remove(TagOrTypeEntry.parse(key), TagOrTypeEntry.parse(toEnable));
+        markDirty();
+        return ret;
+    }
+
+    public boolean isAngerDisabled(Entity entity1, Entity entity2) {
+        UUID uuid1 = entity1.getUuid();
+        EntityType<?> type2 = entity2.getType();
+        {   // Check TYPES (and specific)
+            boolean ret = isEntityAngerDisabled(uuid1, type2) || isSpecificEntityAngerDisabled(uuid1, entity2.getUuid()) || isGlobalAngerDisabled(entity1.getType(), type2);
+            if (ret) return true;
         }
-        return specificDisabled.get(target).contains(targeter);
-    }
-
-
-    private boolean hasAngerDisabled(Entity target, @NotNull Entity targeter) {
-        return hasAngerTypeDisabled(target, EntityType.getId(targeter.getType())) || hasAngerTagDisabled(target, targeter.getType());
-    }
-
-
-    private boolean hasAngerTypeDisabled(@NotNull Entity target, Identifier identifier) {
-        if (!entityDisabled.containsKey(target.getUuid())) {
-            return false;
+        {   // Check TAGS
+            Optional<RegistryKey<EntityType<?>>> key = Registry.ENTITY_TYPE.getKey(type2);
+            if (key.isEmpty()) return false;
+            Optional<RegistryEntry<EntityType<?>>> entry = Registry.ENTITY_TYPE.getEntry(key.get());
+            if (entry.isEmpty()) return false;
+            return entry.get().streamTags().anyMatch(tagKey -> isEntityAngerDisabled(uuid1, tagKey) || isGlobalAngerDisabled(type2, tagKey));
         }
-        return entityDisabled.get(target.getUuid()).contains(identifier);
     }
 
-
-    private boolean hasAngerTagDisabled(Entity target, EntityType<?> type) {
-        if (!entityDisabled.containsKey(target.getUuid())) {
-            return false;
-        }
-        return getTagsFor(type).stream().map(TagKey::id).anyMatch(new HashSet<>(entityDisabled.get(target.getUuid()))::contains);
+    public boolean isGlobalAngerDisabled(EntityType<?> key1, EntityType<?> key2) {
+        return globalDisabled.has(new TagOrTypeEntry(key1), new TagOrTypeEntry(key2));
     }
 
-
-    private boolean isAngerDisabled(Identifier targetType, EntityType<?> targetterType) {
-        return isAngerTypeDisabled(targetType, EntityType.getId(targetterType)) || isAngerTagDisabled(targetType, targetterType);
+    public boolean isGlobalAngerDisabled(EntityType<?> key1, TagKey<EntityType<?>> key2) {
+        return globalDisabled.has(new TagOrTypeEntry(key1), new TagOrTypeEntry(key2));
     }
 
-
-    private boolean isAngerTypeDisabled(Identifier targetType, Identifier type) {
-        if (!globalDisabled.containsKey(targetType)) {
-            return false;
-        }
-        return globalDisabled.get(targetType).contains(type);
+    public boolean isEntityAngerDisabled(UUID uuid, EntityType<?> type) {
+        return entityDisabled.has(uuid, new TagOrTypeEntry(type));
     }
 
-
-    private boolean isAngerTagDisabled(Identifier targetTag, EntityType<?> targetterType) {
-        if (!globalDisabled.containsKey(targetTag)) {
-            return false;
-        }
-        return getTagsFor(targetterType).stream().map(TagKey::id).anyMatch(new HashSet<>(globalDisabled.get(targetTag))::contains);
+    public boolean isEntityAngerDisabled(UUID uuid, TagKey<EntityType<?>> tag) {
+        return entityDisabled.has(uuid, new TagOrTypeEntry(tag));
     }
 
-
-    public static List<TagKey<EntityType<?>>> getTagsFor(EntityType<?> entityType) {
-        Optional<RegistryKey<EntityType<?>>> key = Registry.ENTITY_TYPE.getKey(entityType);
-        if (key.isEmpty() || !Registry.ENTITY_TYPE.contains(key.get())) {
-            return Collections.emptyList();
-        }
-        Optional<RegistryEntry<EntityType<?>>> entry = Registry.ENTITY_TYPE.getEntry(key.get());
-        if (entry.isEmpty()) {
-            return Collections.emptyList();
-        }
-        return entry.get().streamTags().toList();
+    public boolean isSpecificEntityAngerDisabled(UUID uuid1, UUID uuid2) {
+        return specificEntityDisabled.has(uuid1, uuid2);
     }
 }

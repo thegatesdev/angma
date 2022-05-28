@@ -16,9 +16,9 @@ import java.util.Optional;
 public abstract class PiglinBrainMixin {
 
     @Inject(method = "tickActivities", at = @At(value = "RETURN"))
-    private static void tickActivitiesInject(PiglinEntity piglin, CallbackInfo ci){
+    private static void tickActivitiesInject(PiglinEntity piglin, CallbackInfo ci) {
         Optional<LivingEntity> optional = piglin.getBrain().getOptionalMemory(MemoryModuleType.ATTACK_TARGET);
-        if (optional.isPresent() && Main.getSaver().angerDisabled(optional.get(), piglin)){
+        if (optional.isPresent() && Main.getAngerRegister().isAngerDisabled(optional.get(), piglin)) {
             piglin.getBrain().forget(MemoryModuleType.ATTACK_TARGET);
             piglin.setAttacking(false);
         }

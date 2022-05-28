@@ -19,8 +19,8 @@ public abstract class SlimeEntityMixin extends MobEntity {
     }
 
     @Inject(method = "onPlayerCollision", at = @At("HEAD"), cancellable = true)
-    public void onPlayerCollisionInject(PlayerEntity player, CallbackInfo ci){
-        if (Main.getSaver().angerDisabled(this, player)){
+    public void onPlayerCollisionInject(PlayerEntity player, CallbackInfo ci) {
+        if (Main.getAngerRegister().isAngerDisabled(this, player)) {
             ci.cancel();
         }
     }

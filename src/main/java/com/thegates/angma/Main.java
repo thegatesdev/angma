@@ -14,7 +14,7 @@ public class Main implements ModInitializer {
 
     public static String MOD_PREFIX = "[Angma]: ";
 
-    private static AngerRegister saver;
+    private static AngerRegister angerRegister;
 
     @Override
     public void onInitialize() {
@@ -22,13 +22,13 @@ public class Main implements ModInitializer {
         CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> new AngmaCommand().register(dispatcher, dedicated));
     }
 
-    private void serverStarted(MinecraftServer server){
+    private void serverStarted(MinecraftServer server) {
         ServerWorld world = server.getWorld(World.OVERWORLD);
         assert world != null;
-        saver = world.getPersistentStateManager().getOrCreate(AngerRegister::new, AngerRegister::new, MOD_ID);
+        angerRegister = world.getPersistentStateManager().getOrCreate(AngerRegister::new, AngerRegister::new, MOD_ID);
     }
 
-    public static AngerRegister getSaver(){
-        return saver;
+    public static AngerRegister getAngerRegister() {
+        return angerRegister;
     }
 }
