@@ -7,6 +7,7 @@ import net.minecraft.util.registry.Registry;
 import net.minecraft.util.registry.RegistryEntry;
 import net.minecraft.util.registry.RegistryKey;
 
+import java.util.Objects;
 import java.util.Optional;
 
 public class TagOrTypeEntry {
@@ -33,7 +34,7 @@ public class TagOrTypeEntry {
         return new TagOrTypeEntry(TagKey.of(Registry.ENTITY_TYPE.getKey(), identifier));
     }
 
-    public boolean getTagKey() {
+    public boolean isTagKey() {
         return tagKey != null;
     }
 
@@ -42,9 +43,9 @@ public class TagOrTypeEntry {
     }
 
     public String string() {
-        if (tagKey != null) return "#" + tagKey;
-        else if (entityType != null) return entityType.toString();
-        else throw new IllegalStateException("Botj tagId and entityType are null!");
+        if (tagKey != null) return tagKey.id().toString();
+        else if (entityType != null) return entityType.getUntranslatedName();
+        else throw new IllegalStateException("Both tagId and entityType are null!");
     }
 
     public boolean hasTag(EntityType<?> entityType) {
@@ -57,7 +58,24 @@ public class TagOrTypeEntry {
 
     public static TagOrTypeEntry parse(Identifier identifier) {
         if (identifier == null) return null;
-        Optional<EntityType<?>> entityType1 = EntityType.get(identifier.toString());
+        Optional<EntityType<?>> entityType1 = Registry.ENTITY_TYPE.getOrEmpty(identifier);
         return entityType1.map(TagOrTypeEntry::new).orElseGet(() -> TagOrTypeEntry.tag(identifier));
+    }
+
+    public static TagOrTypeEntry parse(String string) {
+        return parse(Identifier.tryParse(string));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TagOrTypeEntry that = (TagOrTypeEntry) o;
+        return Objects.equals(entityType, that.entityType) && Objects.equals(tagKey, that.tagKey);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(entityType, tagKey);
     }
 }

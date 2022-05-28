@@ -19,7 +19,7 @@
     ]
   },
   "mixins": [
-    "angma.mixins.json"
+    "tg_angma.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=0.11.3",

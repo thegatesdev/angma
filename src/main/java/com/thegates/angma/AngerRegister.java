@@ -3,7 +3,6 @@ package com.thegates.angma;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtList;
 import net.minecraft.tag.TagKey;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
@@ -43,36 +42,13 @@ public class AngerRegister extends PersistentState {
         NbtCompound globalDisabledInput = nbt.getCompound("typeDisabled");
         NbtCompound specificDisabledInput = nbt.getCompound("specificDisabled");
 
-        entityDisabledInput.getKeys().forEach(uuidString -> {
-            NbtList nbtList = (NbtList) entityDisabledInput.get(uuidString);
-            if (nbtList == null) return;
-            UUID uuid = UUID.fromString(uuidString);
-            nbtList.forEach(nbtElement -> {
-                TagOrTypeEntry parsed = TagOrTypeEntry.parse(Identifier.tryParse(nbtElement.asString()));
-                if (parsed != null) entityDisabled.putOverHead(uuid, parsed, nbtList.size());
-            });
-        });
-
-        globalDisabledInput.getKeys().forEach(identifierString -> {
-            NbtList nbtList = (NbtList) globalDisabledInput.get(identifierString);
-            if (nbtList == null) return;
-            Identifier identifier = Identifier.tryParse(identifierString);
-            nbtList.forEach(nbtElement -> {
-                TagOrTypeEntry parse = TagOrTypeEntry.parse(Identifier.tryParse(nbtElement.asString()));
-                if (parse != null) globalDisabled.putOverHead(TagOrTypeEntry.parse(identifier), parse, nbtList.size());
-            });
-        });
-
-        specificDisabledInput.getKeys().forEach(key -> {
-            NbtList nbtList = (NbtList) globalDisabledInput.get(key);
-            if (nbtList == null) return;
-            UUID uuid = UUID.fromString(key);
-            nbtList.forEach(nbtElement -> specificEntityDisabled.putOverHead(uuid, UUID.fromString(nbtElement.asString()), nbtList.size()));
-        });
+        entityDisabled.readNbt(entityDisabledInput, UUID::fromString, TagOrTypeEntry::parse);
+        globalDisabled.readNbt(globalDisabledInput, TagOrTypeEntry::parse, TagOrTypeEntry::parse);
+        specificEntityDisabled.readNbt(specificDisabledInput, UUID::fromString, UUID::fromString);
     }
 
 
-    // WriteNbt is called when a PersistentState is marked dirty, and the game saves.
+    // WriteNbt is called when a PersistentState is marked dirty, and when the game saves.
     @Override
     public NbtCompound writeNbt(NbtCompound nbt) {
         nbt.put("playerDisabled", entityDisabled.populateNbt(UUID::toString, TagOrTypeEntry::string));
@@ -88,7 +64,7 @@ public class AngerRegister extends PersistentState {
 
 
     public List<Identifier> getDisabledTags(UUID uuid) {
-        return entityDisabled.get(uuid).stream().filter(TagOrTypeEntry::getTagKey).map(TagOrTypeEntry::string).map(Identifier::tryParse).filter(Objects::nonNull).toList();
+        return entityDisabled.get(uuid).stream().filter(TagOrTypeEntry::isTagKey).map(TagOrTypeEntry::string).map(Identifier::tryParse).filter(Objects::nonNull).toList();
     }
 
 
@@ -140,14 +116,14 @@ public class AngerRegister extends PersistentState {
 
 
     public boolean addGlobalMobType(Identifier key, Identifier toDisable) {
-        boolean ret = globalDisabled.put(TagOrTypeEntry.parse(key), TagOrTypeEntry.parse(toDisable));
+        boolean ret = globalDisabled.put(TagOrTypeEntry.type(key), TagOrTypeEntry.parse(toDisable));
         markDirty();
         return ret;
     }
 
 
     public boolean removeGlobalMobType(Identifier key, Identifier toEnable) {
-        boolean ret = globalDisabled.remove(TagOrTypeEntry.parse(key), TagOrTypeEntry.parse(toEnable));
+        boolean ret = globalDisabled.remove(TagOrTypeEntry.type(key), TagOrTypeEntry.parse(toEnable));
         markDirty();
         return ret;
     }
@@ -164,16 +140,16 @@ public class AngerRegister extends PersistentState {
             if (key.isEmpty()) return false;
             Optional<RegistryEntry<EntityType<?>>> entry = Registry.ENTITY_TYPE.getEntry(key.get());
             if (entry.isEmpty()) return false;
-            return entry.get().streamTags().anyMatch(tagKey -> isEntityAngerDisabled(uuid1, tagKey) || isGlobalAngerDisabled(type2, tagKey));
+            return entry.get().streamTags().anyMatch(tagKey -> isGlobalAngerDisabled(entity1.getType(), tagKey) || isEntityAngerDisabled(uuid1, tagKey));
         }
     }
 
-    public boolean isGlobalAngerDisabled(EntityType<?> key1, EntityType<?> key2) {
-        return globalDisabled.has(new TagOrTypeEntry(key1), new TagOrTypeEntry(key2));
+    public boolean isGlobalAngerDisabled(EntityType<?> key, EntityType<?> type) {
+        return globalDisabled.has(new TagOrTypeEntry(key), new TagOrTypeEntry(type));
     }
 
-    public boolean isGlobalAngerDisabled(EntityType<?> key1, TagKey<EntityType<?>> key2) {
-        return globalDisabled.has(new TagOrTypeEntry(key1), new TagOrTypeEntry(key2));
+    public boolean isGlobalAngerDisabled(EntityType<?> key, TagKey<EntityType<?>> tag) {
+        return globalDisabled.has(new TagOrTypeEntry(key), new TagOrTypeEntry(tag));
     }
 
     public boolean isEntityAngerDisabled(UUID uuid, EntityType<?> type) {
