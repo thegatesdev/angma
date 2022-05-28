@@ -1,0 +1,7 @@
+"EndermanEntityMixin",
+    "EntityMixin",
+    "HoglinBrainMixin",
+    "MobEntityMixin",
+    "PiglinBrainMixin",
+    "PiglinBruteBrainMixin",
+    "SlimeEntityMixin"

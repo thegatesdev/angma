@@ -4,13 +4,8 @@
   "package": "com.thegates.angma.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
-    "EndermanEntityMixin",
-    "EntityMixin",
-    "HoglinBrainMixin",
-    "MobEntityMixin",
-    "PiglinBrainMixin",
-    "PiglinBruteBrainMixin",
-    "SlimeEntityMixin"
+    "ActiveTargetGoalMixin",
+    "RevengeGoalMixin"
   ],
   "client": [],
   "server": [],

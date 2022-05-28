@@ -129,6 +129,7 @@ public class AngerRegister extends PersistentState {
     }
 
     public boolean isAngerDisabled(Entity entity1, Entity entity2) {
+        if (entity1 == null || entity2 == null) return false;
         UUID uuid1 = entity1.getUuid();
         EntityType<?> type2 = entity2.getType();
         {   // Check TYPES (and specific)
