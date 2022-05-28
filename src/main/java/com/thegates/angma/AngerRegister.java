@@ -70,11 +70,13 @@ public class AngerRegister extends PersistentState {
 
 
     public List<Identifier> getDisabledTypes(UUID uuid) {
+        if (!entityDisabled.hasKey(uuid)) return Collections.emptyList();
         return entityDisabled.get(uuid).stream().filter(TagOrTypeEntry::isType).map(TagOrTypeEntry::string).map(Identifier::tryParse).filter(Objects::nonNull).toList();
     }
 
 
     public List<Identifier> getDisabledTags(UUID uuid) {
+        if (!entityDisabled.hasKey(uuid)) return Collections.emptyList();
         return entityDisabled.get(uuid).stream().filter(TagOrTypeEntry::isTagKey).map(TagOrTypeEntry::string).map(Identifier::tryParse).filter(Objects::nonNull).toList();
     }
 

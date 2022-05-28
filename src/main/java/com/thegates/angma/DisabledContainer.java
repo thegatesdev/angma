@@ -34,6 +34,10 @@ public class DisabledContainer<T, G> {
         return gs.contains(g);
     }
 
+    public boolean hasKey(T t) {
+        return disabledMap.containsKey(t);
+    }
+
     public Set<G> get(T t) {
         return disabledMap.get(t);
     }

@@ -191,22 +191,23 @@ public class AngmaCommand {
             return 0;
         }
         AngerRegister angerRegister = AngMa.getAngerRegister();
-
-        List<Identifier> disabledTypes = angerRegister.getDisabledTypes(source.getEntity().getUuid());
-        if (disabledTypes == null || disabledTypes.isEmpty()) {
-            source.sendFeedback(Text.of("No types disabled."), false);
-        } else {
-            source.sendFeedback(Text.of("Disabled Types:"), false);
-            disabledTypes.forEach(type -> source.sendFeedback(Text.of("-" + type.getPath()), false));
+        {
+            List<Identifier> disabledTypes = angerRegister.getDisabledTypes(source.getEntity().getUuid());
+            if (disabledTypes == null || disabledTypes.isEmpty()) {
+                source.sendFeedback(Text.of("No types disabled."), false);
+            } else {
+                source.sendFeedback(Text.of("Disabled Types:"), false);
+                disabledTypes.forEach(type -> source.sendFeedback(Text.of("-" + type.getPath()), false));
+            }
         }
-
-        List<Identifier> disabledTags = angerRegister.getDisabledTags(source.getEntity().getUuid());
-        if (disabledTags == null || disabledTags.isEmpty()) {
-            source.sendFeedback(Text.of("No tags disabled."), false);
-            return 0;
-        } else {
-            source.sendFeedback(Text.of("Disabled Tags:"), false);
-            disabledTags.forEach(tag -> source.sendFeedback(Text.of("-" + tag.getPath()), false));
+        {
+            List<Identifier> disabledTags = angerRegister.getDisabledTags(source.getEntity().getUuid());
+            if (disabledTags == null || disabledTags.isEmpty()) {
+                source.sendFeedback(Text.of("No tags disabled."), false);
+            } else {
+                source.sendFeedback(Text.of("Disabled Tags:"), false);
+                disabledTags.forEach(tag -> source.sendFeedback(Text.of("-" + tag.getPath()), false));
+            }
         }
         return 1;
     }
