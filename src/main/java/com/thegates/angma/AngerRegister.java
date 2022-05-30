@@ -17,9 +17,9 @@ import java.util.*;
 public class AngerRegister extends PersistentState {
 
     // Information to be saved into nbt and back.
-    private final SetMap<UUID, Object> entityDisabled = new SetMap<>();
+    private final SetMap<UUID, TagOrTypeEntry> entityDisabled = new SetMap<>();
     private final SetMap<UUID, UUID> specificEntityDisabled = new SetMap<>();
-    private final SetMap<Object, Object> globalDisabled = new SetMap<>();
+    private final SetMap<TagOrTypeEntry, TagOrTypeEntry> globalDisabled = new SetMap<>();
 
     private final WeakHashMap<EntityType<?>, RegistryEntry<EntityType<?>>> entityTypeKeyCache = new WeakHashMap<>(1, 0.6f);
 
@@ -43,12 +43,12 @@ public class AngerRegister extends PersistentState {
         {
             NbtCompound entityDisabledInput = nbt.getCompound("playerDisabled");
             if (!entityDisabledInput.isEmpty())
-                entityDisabled.readNbt(entityDisabledInput, UUID::fromString, Util::tagKeyOrType);
+                entityDisabled.readNbt(entityDisabledInput, UUID::fromString, TagOrTypeEntry::parse);
         }
         {
             NbtCompound globalDisabledInput = nbt.getCompound("typeDisabled");
             if (!globalDisabledInput.isEmpty())
-                globalDisabled.readNbt(globalDisabledInput, Util::tagKeyOrType, Util::tagKeyOrType);
+                globalDisabled.readNbt(globalDisabledInput, TagOrTypeEntry::parse, TagOrTypeEntry::parse);
         }
         {
             NbtCompound specificDisabledInput = nbt.getCompound("specificDisabled");
@@ -62,8 +62,8 @@ public class AngerRegister extends PersistentState {
     // WriteNbt is called when a PersistentState is marked dirty, and when the game saves.
     @Override
     public NbtCompound writeNbt(NbtCompound nbt) {
-        nbt.put("playerDisabled", entityDisabled.populateNbt(UUID::toString, Util::string));
-        nbt.put("typeDisabled", globalDisabled.populateNbt(Util::string, Util::string));
+        nbt.put("playerDisabled", entityDisabled.populateNbt(UUID::toString, TagOrTypeEntry::string));
+        nbt.put("typeDisabled", globalDisabled.populateNbt(TagOrTypeEntry::string, TagOrTypeEntry::string));
         nbt.put("specificDisabled", specificEntityDisabled.populateNbt(UUID::toString, UUID::toString));
         return nbt;
     }
@@ -71,44 +71,44 @@ public class AngerRegister extends PersistentState {
 
     public List<Identifier> getDisabledTypes(UUID uuid) {
         if (entityDisabled.hasNoKey(uuid)) return Collections.emptyList();
-        return entityDisabled.get(uuid).stream().filter(Util::isType).map(Util::string).map(Identifier::tryParse).filter(Objects::nonNull).toList();
+        return entityDisabled.get(uuid).stream().filter(TagOrTypeEntry::isType).map(TagOrTypeEntry::string).map(Identifier::tryParse).filter(Objects::nonNull).toList();
     }
 
 
     public List<Identifier> getDisabledTags(UUID uuid) {
         if (entityDisabled.hasNoKey(uuid)) return Collections.emptyList();
-        return entityDisabled.get(uuid).stream().filter(Util::isTagKey).map(Util::string).map(Identifier::tryParse).filter(Objects::nonNull).toList();
+        return entityDisabled.get(uuid).stream().filter(TagOrTypeEntry::isTagKey).map(TagOrTypeEntry::string).map(Identifier::tryParse).filter(Objects::nonNull).toList();
     }
 
 
-    public Map<Object, Set<Object>> getGlobalDisabled() {
+    public Map<TagOrTypeEntry, Set<TagOrTypeEntry>> getGlobalDisabled() {
         return globalDisabled.read();
     }
 
 
     public boolean addMobType(UUID entityUUID, Identifier type) {
-        boolean ret = entityDisabled.put(entityUUID, Util.typeFromId(type));
+        boolean ret = entityDisabled.put(entityUUID, TagOrTypeEntry.type(type));
         markDirty();
         return ret;
     }
 
 
     public boolean removeMobType(UUID entityUUID, Identifier type) {
-        boolean ret = entityDisabled.remove(entityUUID, Util.typeFromId(type));
+        boolean ret = entityDisabled.remove(entityUUID, TagOrTypeEntry.type(type));
         markDirty();
         return ret;
     }
 
 
     public boolean addTag(UUID entityUUID, Identifier tag) {
-        boolean ret = entityDisabled.put(entityUUID, Util.tagKeyFromId(tag));
+        boolean ret = entityDisabled.put(entityUUID, TagOrTypeEntry.tag(tag));
         markDirty();
         return ret;
     }
 
 
-    public boolean removeTag(UUID entityUUID, Identifier tag) {
-        boolean ret = entityDisabled.remove(entityUUID, Util.tagKeyFromId(tag));
+    public boolean removeTag(UUID entityUUID, Identifier tagId) {
+        boolean ret = entityDisabled.remove(entityUUID, TagOrTypeEntry.tag(tagId));
         markDirty();
         return ret;
     }
@@ -128,15 +128,15 @@ public class AngerRegister extends PersistentState {
     }
 
 
-    public boolean addGlobal(Identifier type, Identifier toDisable) {
-        boolean ret = globalDisabled.put(Util.typeFromId(type), Util.tagKeyOrType(toDisable));
+    public boolean addGlobalMobType(Identifier key, Identifier toDisable) {
+        boolean ret = globalDisabled.put(TagOrTypeEntry.type(key), TagOrTypeEntry.parse(toDisable));
         markDirty();
         return ret;
     }
 
 
-    public boolean removeGlobal(Identifier type, Identifier toEnable) {
-        boolean ret = globalDisabled.remove(Util.typeFromId(type), Util.tagKeyOrType(toEnable));
+    public boolean removeGlobalMobType(Identifier key, Identifier toEnable) {
+        boolean ret = globalDisabled.remove(TagOrTypeEntry.type(key), TagOrTypeEntry.parse(toEnable));
         markDirty();
         return ret;
     }
@@ -166,19 +166,19 @@ public class AngerRegister extends PersistentState {
     }
 
     public boolean isGlobalAngerDisabled(EntityType<?> key, EntityType<?> type) {
-        return globalDisabled.has(key, type);
+        return globalDisabled.has(new TagOrTypeEntry(key), new TagOrTypeEntry(type));
     }
 
     public boolean isGlobalAngerDisabled(EntityType<?> key, TagKey<EntityType<?>> tag) {
-        return globalDisabled.has(key, tag);
+        return globalDisabled.has(new TagOrTypeEntry(key), new TagOrTypeEntry(tag));
     }
 
     public boolean isEntityAngerDisabled(UUID uuid, EntityType<?> type) {
-        return entityDisabled.has(uuid, type);
+        return entityDisabled.has(uuid, new TagOrTypeEntry(type));
     }
 
     public boolean isEntityAngerDisabled(UUID uuid, TagKey<EntityType<?>> tag) {
-        return entityDisabled.has(uuid, tag);
+        return entityDisabled.has(uuid, new TagOrTypeEntry(tag));
     }
 
     public boolean isSpecificEntityAngerDisabled(UUID uuid1, UUID uuid2) {

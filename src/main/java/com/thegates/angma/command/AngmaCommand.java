@@ -5,6 +5,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.thegates.angma.AngMa;
 import com.thegates.angma.AngerRegister;
+import com.thegates.angma.TagOrTypeEntry;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.command.argument.IdentifierArgumentType;
@@ -112,10 +113,10 @@ public class AngmaCommand {
     private int globalAngerType(ServerCommandSource source, Identifier forType, Identifier fromType, boolean remove) {
         String response;
         if (!remove) {
-            AngMa.getAngerRegister().addGlobal(forType, fromType);
+            AngMa.getAngerRegister().addGlobalMobType(forType, fromType);
             response = "Added " + forType.getPath() + ".";
         } else {
-            AngMa.getAngerRegister().removeGlobal(forType, fromType);
+            AngMa.getAngerRegister().removeGlobalMobType(forType, fromType);
             response = "Removed " + forType.getPath() + ".";
         }
 
@@ -213,7 +214,7 @@ public class AngmaCommand {
 
 
     private int listGlobalAngerTo(ServerCommandSource source) {
-        Map<Object, Set<Object>> map = AngMa.getAngerRegister().getGlobalDisabled();
+        Map<TagOrTypeEntry, Set<TagOrTypeEntry>> map = AngMa.getAngerRegister().getGlobalDisabled();
         if (map == null || map.isEmpty()) {
             source.sendFeedback(Text.of("No global anger disabled!"), false);
             return 1;
@@ -221,9 +222,9 @@ public class AngmaCommand {
 
         source.sendFeedback(Text.of("Global anger:"), false);
 
-        map.forEach((ob, obs) -> {
-            source.sendFeedback(Text.of("-Anger disabled for " + com.thegates.angma.Util.string(ob) + ":"), false);
-            obs.forEach(ob2 -> source.sendFeedback(Text.of("   -" + com.thegates.angma.Util.string(ob2)), false));
+        map.forEach((identifier, identifiers) -> {
+            source.sendFeedback(Text.of("-Anger disabled for " + identifier.string() + ":"), false);
+            identifiers.forEach(identifier1 -> source.sendFeedback(Text.of("   -" + identifier1.string()), false));
         });
 
         return 1;
