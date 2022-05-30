@@ -7,7 +7,7 @@ import net.minecraft.nbt.NbtString;
 import java.util.*;
 import java.util.function.Function;
 
-public class DisabledContainer<T, G> {
+public class SetMap<T, G> {
 
     private final Map<T, Set<G>> disabledMap = new HashMap<>(1, 0.85f);
 
@@ -29,13 +29,14 @@ public class DisabledContainer<T, G> {
     }
 
     public boolean has(T t, G g) {
-        if (!disabledMap.containsKey(t)) return false;  // Short circuit because it is likely to be false.
+        if (disabledMap.isEmpty() || !disabledMap.containsKey(t))
+            return false;  // Short circuit because it is likely to be false.
         Set<G> gs = disabledMap.get(t);
         return gs.contains(g);
     }
 
-    public boolean hasKey(T t) {
-        return disabledMap.containsKey(t);
+    public boolean hasNoKey(T t) {
+        return !disabledMap.containsKey(t);
     }
 
     public Set<G> get(T t) {

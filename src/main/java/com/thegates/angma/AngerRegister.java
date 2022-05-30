@@ -17,11 +17,11 @@ import java.util.*;
 public class AngerRegister extends PersistentState {
 
     // Information to be saved into nbt and back.
-    private final DisabledContainer<UUID, TagOrTypeEntry> entityDisabled = new DisabledContainer<>();
-    private final DisabledContainer<UUID, UUID> specificEntityDisabled = new DisabledContainer<>();
-    private final DisabledContainer<TagOrTypeEntry, TagOrTypeEntry> globalDisabled = new DisabledContainer<>();
+    private final SetMap<UUID, TagOrTypeEntry> entityDisabled = new SetMap<>();
+    private final SetMap<UUID, UUID> specificEntityDisabled = new SetMap<>();
+    private final SetMap<TagOrTypeEntry, TagOrTypeEntry> globalDisabled = new SetMap<>();
 
-    private final WeakHashMap<EntityType<?>, RegistryEntry<EntityType<?>>> entityTypeCache = new WeakHashMap<>(1, 0.6f);
+    private final WeakHashMap<EntityType<?>, RegistryEntry<EntityType<?>>> entityTypeKeyCache = new WeakHashMap<>(1, 0.6f);
 
 
     // Default constructor, used for getting the persistentState.
@@ -70,13 +70,13 @@ public class AngerRegister extends PersistentState {
 
 
     public List<Identifier> getDisabledTypes(UUID uuid) {
-        if (!entityDisabled.hasKey(uuid)) return Collections.emptyList();
+        if (entityDisabled.hasNoKey(uuid)) return Collections.emptyList();
         return entityDisabled.get(uuid).stream().filter(TagOrTypeEntry::isType).map(TagOrTypeEntry::string).map(Identifier::tryParse).filter(Objects::nonNull).toList();
     }
 
 
     public List<Identifier> getDisabledTags(UUID uuid) {
-        if (!entityDisabled.hasKey(uuid)) return Collections.emptyList();
+        if (entityDisabled.hasNoKey(uuid)) return Collections.emptyList();
         return entityDisabled.get(uuid).stream().filter(TagOrTypeEntry::isTagKey).map(TagOrTypeEntry::string).map(Identifier::tryParse).filter(Objects::nonNull).toList();
     }
 
@@ -151,15 +151,15 @@ public class AngerRegister extends PersistentState {
         }
         {   // Check TAGS
             RegistryEntry<EntityType<?>> entry;
-            if (entityTypeCache.containsKey(type2)) {
-                entry = entityTypeCache.get(type2);
+            if (entityTypeKeyCache.containsKey(type2)) {
+                entry = entityTypeKeyCache.get(type2);
             } else {
                 Optional<RegistryKey<EntityType<?>>> key = Registry.ENTITY_TYPE.getKey(type2);
                 if (key.isEmpty()) return false;
                 Optional<RegistryEntry<EntityType<?>>> optionalEntry = Registry.ENTITY_TYPE.getEntry(key.get());
                 if (optionalEntry.isEmpty()) return false;
                 entry = optionalEntry.get();
-                entityTypeCache.put(type2, entry);
+                entityTypeKeyCache.put(type2, entry);
             }
             return entry.streamTags().anyMatch(tagKey -> isGlobalAngerDisabled(entity1.getType(), tagKey) || isEntityAngerDisabled(uuid1, tagKey));
         }
